@@ -11,16 +11,37 @@ import {
 } from "@xyflow/react"
 import { useTheme } from "next-themes"
 import { initialNodes, nodeTypes } from "./nodes"
+import type {
+  Node as DbNode,
+  Edge as DbEdge,
+} from "@/app/generated/prisma/client"
+const page = ({
+  dbnodes,
+  dbedges,
+}: {
+  dbnodes: DbNode[]
+  dbedges: DbEdge[]
+}) => {
+  const rfnodes = dbnodes.map((n) => ({
+    id: n.id,
+    type: n.type,
+    position: { x: n.positionX, y: n.positionY },
+    data: { title: n.title },
+  }))
 
-const page = () => {
-  const [nodes, , onNodesChange] = useNodesState(initialNodes)
-  // const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
+  const rfedges = dbedges.map((e) => ({
+    id: e.id,
+    source: e.sourceNodeId,
+    target: e.targetNodeId,
+  }))
+  const [nodes, , onNodesChange] = useNodesState(rfnodes)
+  const [edges, setEdges, onEdgesChange] = useEdgesState(rfedges)
 
   const { resolvedTheme } = useTheme()
   return (
     <ReactFlow
       nodes={nodes}
-      // edges={edges}
+      edges={edges}
       nodeTypes={nodeTypes}
       fitView
       onNodesChange={onNodesChange}

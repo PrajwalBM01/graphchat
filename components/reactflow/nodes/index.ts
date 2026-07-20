@@ -7,7 +7,7 @@ export const initialNodes: appNodes[] = [
   { id: "n1", position: { x: 0, y: 0 }, data: { label: "Node 1" } },
   {
     id: "n2",
-    type: "chat-node",
+    type: "chat",
     width:250,
     // height: 400,
     position: { x: 0, y: 100 },
@@ -28,5 +28,5 @@ export const initialNodes: appNodes[] = [
 // ]
 
 export const nodeTypes = {
-  "chat-node": chatnode,
+  "chat": chatnode,
 } satisfies NodeTypes

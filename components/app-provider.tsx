@@ -1,3 +1,4 @@
+import History from "@/app/chat/History"
 import {
   Sidebar,
   SidebarContent,
@@ -9,14 +10,18 @@ import {
 import prisma from "@/lib/prisma"
 
 export async function AppSidebar() {
-  const canvases = await prisma.canvas.findMany()
-  //   console.log(canvases)
+  const canvases = await prisma.canvas.findMany({
+    orderBy: { createdAt: "asc" },
+  })
+  console.log(canvases)
   return (
-    <Sidebar>
+    <Sidebar variant="floating">
       <SidebarHeader>
-        <SidebarTrigger className="border border-red-600" />
+        <SidebarTrigger className="" />
       </SidebarHeader>
-      <SidebarContent className="flex flex-col gap-2 p-2"></SidebarContent>
+      <SidebarContent className="flex flex-col gap-2 p-2">
+        <History canvases={canvases} />
+      </SidebarContent>
       <SidebarFooter />
     </Sidebar>
   )
