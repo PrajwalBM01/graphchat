@@ -5,6 +5,7 @@ import { use } from "react"
 import type {
   Node as DbNode,
   Edge as DbEdge,
+  Message as DbMessage,
 } from "@/app/generated/prisma/client"
 const Rfcanvas = dynamic(() => import("@/components/reactflow/chat-canvas"), {
   ssr: false,
@@ -15,11 +16,13 @@ const Rfcanvas = dynamic(() => import("@/components/reactflow/chat-canvas"), {
   ),
 })
 
+export type NodeCombined = { messages: DbMessage[] } & DbNode
+
 export default function ChatCanvas({
   nodes,
   edges,
 }: {
-  nodes: DbNode[]
+  nodes: NodeCombined[]
   edges: DbEdge[]
 }) {
   const { state } = useSidebar()

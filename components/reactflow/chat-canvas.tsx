@@ -15,18 +15,19 @@ import type {
   Node as DbNode,
   Edge as DbEdge,
 } from "@/app/generated/prisma/client"
+import { NodeCombined } from "@/app/chat/[id]/canvas-view"
 const page = ({
   dbnodes,
   dbedges,
 }: {
-  dbnodes: DbNode[]
+  dbnodes: NodeCombined[]
   dbedges: DbEdge[]
 }) => {
   const rfnodes = dbnodes.map((n) => ({
     id: n.id,
     type: n.type,
     position: { x: n.positionX, y: n.positionY },
-    data: { title: n.title },
+    data: { id: n.id, title: n.title, messages: n.messages },
   }))
 
   const rfedges = dbedges.map((e) => ({
