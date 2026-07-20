@@ -6,8 +6,9 @@ import {
   UIMessage,
 } from "ai"
 import { google } from "@ai-sdk/google"
+import { NextRequest, NextResponse } from "next/server"
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const { messages }: { messages: UIMessage[] } = await req.json()
   console.log("reciiving the req", req)
 
@@ -16,9 +17,9 @@ export async function POST(req: Request) {
     messages: await convertToModelMessages(messages),
   })
   console.log(result)
-  
 
   return createUIMessageStreamResponse({
     stream: toUIMessageStream({ stream: result.stream }),
   })
 }
+

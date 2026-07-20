@@ -1,0 +1,66 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum NodeType {
+  chat
+  text
+  web
+}
+
+enum Role {
+  user
+  assistant
+}
+
+model Canvas {
+  id String @id @default(cuid())
+  title String?
+  nodes Node[]
+  edges Edge[]
+  createdAt DateTime @default(now())
+}
+
+model Node {
+  id String @id @default(cuid())
+  canvasId String
+  canvas Canvas @relation(fields: [canvasId], references: [id])
+  type NodeType
+  positionX Float
+  positionY Float
+  title String?
+  isolated Boolean @default(false)
+  messages Message[]
+  incoming Edge[] @relation("targetNode")
+  outgoing Edge[] @relation("sourceNode")
+}
+
+model Edge {
+  id String @id @default(cuid())
+  canvasId String
+  canvas Canvas @relation(fields: [canvasId],references: [id])
+  sourceNodeId String
+  targetNodeId String
+  sourceNode Node @relation("sourceNode", fields: [sourceNodeId],references: [id])
+  targetNode Node @relation("targetNode", fields: [targetNodeId], references: [id])
+  branchPointMessageId String?
+}
+
+model Message {
+  id String @id @default(cuid())
+  nodeId String
+  node Node @relation(fields: [nodeId],references: [id])
+  role Role
+  content String
+  createdAt DateTime @default(now())
+}
