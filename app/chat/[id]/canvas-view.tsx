@@ -7,7 +7,14 @@ import type {
   Edge as DbEdge,
   Message as DbMessage,
 } from "@/app/generated/prisma/client"
-const Rfcanvas = dynamic(() => import("@/components/reactflow/chat-canvas"), {
+import { ReactFlowProvider } from "@xyflow/react"
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+} from "@/components/ui/context-menu"
+const Rfcanvas = dynamic(() => import("@/app/chat/chat-canvas"), {
   ssr: false,
   loading: () => (
     <div className="flex h-dvh w-full items-center justify-center bg-background">
@@ -28,13 +35,15 @@ export default function ChatCanvas({
   const { state } = useSidebar()
 
   return (
-    <div className="h-dvh w-full">
+    <div className="h-dvh w-full border border-red-400">
       {state === "collapsed" && (
         <span className="absolute z-100 p-2">
           <SidebarTrigger />
         </span>
       )}
-      <Rfcanvas dbnodes={nodes} dbedges={edges} />
+      <ReactFlowProvider>
+        <Rfcanvas dbnodes={nodes} dbedges={edges} />
+      </ReactFlowProvider>
     </div>
   )
 }

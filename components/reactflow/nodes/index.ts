@@ -1,32 +1,52 @@
 import { BuiltInNode, Edge, Node, NodeTypes } from "@xyflow/react"
-import chatnode, { chatNode } from "./chatnode"
+import chatnode from "./chatnode"
+import type { Message as DbMessage } from "@/app/generated/prisma/client"
+import textnode from "./textnode"
+import webnode from "./webnode"
 
-export type appNodes = BuiltInNode | chatNode
+enum status {
+  read,
+  pending,
+  failed,
+}
 
-export const initialNodes: appNodes[] = [
-  { id: "n1", position: { x: 0, y: 0 }, data: { label: "Node 1" } },
+export type chatNode = Node<
   {
-    id: "n2",
-    type: "chat",
-    width:250,
-    // height: 400,
-    position: { x: 0, y: 100 },
-    data: { label: "Node 2" },
+    id: string
+    title: string
+    messages: DbMessage[]
+    nodeData: { model: string }
   },
-  {
-    id: "n3",
-    type: "chat-node",
-    width: 250,
-    // height:400,
-    position: { x: 500, y: 100 },
-    data: { label: "Node 2" },
-  },
-]
+  "chat"
+>
 
-// export const initialEdges: Edge[] = [
-//   { id: "n1-n2", source: "n1", target: "n2" },
-// ]
+export type webNode = Node<
+  {
+    id: string
+    title: string
+    nodeData: {
+      url: string
+      status: status
+      content: string
+      fetchedAt: Date
+    }
+  },
+  "web"
+>
+
+export type textNode = Node<
+  {
+    id: string
+    title: string
+    nodeData: { content: string }
+  },
+  "text"
+>
+
+export type appNodes = BuiltInNode | chatNode | textNode | webNode
 
 export const nodeTypes = {
-  "chat": chatnode,
+  chat: chatnode,
+  text: textnode,
+  web: webnode,
 } satisfies NodeTypes
