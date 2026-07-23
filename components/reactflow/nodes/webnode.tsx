@@ -5,7 +5,7 @@ import { webNode } from "./index"
 import { useState } from "react"
 
 const webnode = (props: NodeProps<webNode>) => {
-  const [input, setinput] = useState(props.data.nodeData.url ?? "")
+  const [input, setinput] = useState(props.data.url)
   return (
     <div className="h-auto w-[250px] rounded-xl bg-accent p-2">
       <Handle type="target" position={Position.Left} id="target-a" />

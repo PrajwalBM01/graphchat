@@ -3,47 +3,70 @@ import chatnode from "./chatnode"
 import type { Message as DbMessage } from "@/app/generated/prisma/client"
 import textnode from "./textnode"
 import webnode from "./webnode"
+import { z } from "zod"
+import { MessageSchema } from "@/app/generated/zod/schemas/models"
 
 enum status {
   read,
   pending,
   failed,
+  idle,
 }
 
-export type chatNode = Node<
-  {
-    id: string
-    title: string
-    messages: DbMessage[]
-    nodeData: { model: string }
-  },
-  "chat"
->
+// export type chatNode = Node<
+//   {
+//     title: string
+//     messages: DbMessage[] | []
+//     nodeData: { model: string } | null
+//   },
+//   "chat"
+// >
 
-export type webNode = Node<
-  {
-    id: string
-    title: string
-    nodeData: {
-      url: string
-      status: status
-      content: string
-      fetchedAt: Date
-    }
-  },
-  "web"
->
+// export type webNode = Node<
+//   {
+//     title: string
+//     nodeData: {
+//       url: string
+//       status: status
+//       content: string
+//       fetchedAt: Date
+//     } | null
+//   },
+//   "web"
+// >
 
-export type textNode = Node<
-  {
-    id: string
-    title: string
-    nodeData: { content: string }
-  },
-  "text"
->
+//schemas
+export const ChatNodeDataSchema = z.object({
+  title: z.string().default("Untitled Chat Node"),
+  model: z.string().default("gemini-2.5-flash"),
+  messages: z.array(MessageSchema).default([]),
+})
 
-export type appNodes = BuiltInNode | chatNode | textNode | webNode
+export const TextNodeDataSchema = z.object({
+  title: z.string().default("Untited Text Node"),
+  content: z.string().default(""),
+})
+
+export const WebNodeDataSchema = z.object({
+  title: z.string().default("Untitled Web Node"),
+  url: z.string().default(""),
+  status: z.enum(status).default(status.idle),
+})
+
+export const NodeDataTypes = [TextNodeDataSchema, WebNodeDataSchema]
+
+//node data types
+export type TextNodeData = z.infer<typeof TextNodeDataSchema>
+export type WebNodeData = z.infer<typeof WebNodeDataSchema>
+export type ChatNodeData = z.infer<typeof ChatNodeDataSchema>
+
+export type NodeData = TextNodeData | WebNodeData | ChatNodeData
+//register custom nodes
+export type textNode = Node<TextNodeData, "text">
+export type webNode = Node<WebNodeData, "web">
+export type chatNode = Node<ChatNodeData, "chat">
+
+export type appNodes = textNode | webNode | chatNode
 
 export const nodeTypes = {
   chat: chatnode,

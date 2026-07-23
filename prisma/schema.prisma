@@ -8,6 +8,12 @@ generator client {
   output   = "../app/generated/prisma"
 }
 
+generator zod {
+  provider = "prisma-zod-generator"
+  output="../app/generated/zod"
+  config = "./zod-generator.config.json"
+}
+
 datasource db {
   provider = "postgresql"
 }

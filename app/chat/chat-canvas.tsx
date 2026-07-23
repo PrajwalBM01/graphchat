@@ -1,70 +1,63 @@
 "use client"
 import "@xyflow/react/dist/style.css"
-
 import {
   Background,
   Controls,
+  Edge,
   MiniMap,
   OnNodeDrag,
+  OnNodesDelete,
   ReactFlow,
   useEdgesState,
   useNodesState,
-  useReactFlow,
 } from "@xyflow/react"
 import { useTheme } from "next-themes"
-import { nodeTypes } from "../../components/reactflow/nodes"
-import type {
-  Node as DbNode,
-  Edge as DbEdge,
-} from "@/app/generated/prisma/client"
-import { NodeCombined } from "@/app/chat/[id]/canvas-view"
-import { updateNodePos } from "./nodeActions"
+import { appNodes, nodeTypes } from "../../components/reactflow/nodes"
+import { deleteNode, updateNodePos } from "./nodeActions"
+import PaneContext from "@/components/reactflow/PaneContext"
 
-const nodeDragStop: OnNodeDrag = (event, node) => {
-  updateNodePos(node.id, node.position.x, node.position.y)
+const handleNodeDrag: OnNodeDrag = (event, node) => {
+  updateNodePos({
+    nodeId: node.id,
+    posX: node.position.x,
+    posY: node.position.y,
+  })
 }
 
 const page = ({
-  dbnodes,
-  dbedges,
+  rfnodes,
+  rfedges,
 }: {
-  dbnodes: NodeCombined[]
-  dbedges: DbEdge[]
+  rfnodes: appNodes[]
+  rfedges: Edge[]
 }) => {
-  const rfnodes = dbnodes.map((n) => ({
-    id: n.id,
-    type: n.type,
-    position: { x: n.positionX, y: n.positionY },
-    data: { id: n.id, title: n.title, messages: n.messages, nodeData: n.data },
-  }))
-
-  const rfedges = dbedges.map((e) => ({
-    id: e.id,
-    source: e.sourceNodeId,
-    target: e.targetNodeId,
-  }))
   const [nodes, , onNodesChange] = useNodesState(rfnodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(rfedges)
-  const reactFlowinstance = useReactFlow()
-
   const { resolvedTheme } = useTheme()
+
   return (
     <ReactFlow
       debug={true}
-      onPaneContextMenu={(e) => {
-        console.log(e)
+      onNodeContextMenu={(e) => {
         e.preventDefault()
+        console.log(e)
       }}
       nodes={nodes}
       edges={edges}
       nodeTypes={nodeTypes}
       fitView
       onNodesChange={onNodesChange}
-      onNodeDragStop={nodeDragStop}
+      onNodeDragStop={handleNodeDrag}
+      onNodesDelete={(nodes) => {
+        nodes.map((n) => {
+          deleteNode({ nodeId: n.id })
+        })
+      }}
       colorMode={resolvedTheme === "dark" ? "dark" : "light"}
     >
-      <Background />
+      <PaneContext />
       <MiniMap />
+      <Background />
       <Controls />
     </ReactFlow>
   )

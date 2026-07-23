@@ -11,7 +11,7 @@ import { updateMessages } from "@/app/chat/chatActions"
 
 //helpers
 const toUiMessage = (messages: DbMessage[]): UIMessage[] =>
-  messages.map((m) => ({
+  messages?.map((m) => ({
     id: m.id,
     role: m.role,
     parts: [{ type: "text", text: m.content }],
@@ -20,10 +20,10 @@ const toUiMessage = (messages: DbMessage[]): UIMessage[] =>
 const chatnode = (props: NodeProps<chatNode>) => {
   const [input, setinput] = useState("")
   const { messages, sendMessage } = useChat({
-    id: props.data.id,
+    id: props.id,
     messages: toUiMessage(props.data.messages),
     onFinish: ({ message, messages, finishReason }) => {
-      messages.slice(-2).map((msg, _i) => updateMessages(props.data.id, msg))
+      messages.slice(-2).map((msg, _i) => updateMessages(props.id, msg))
     },
   })
   return (
@@ -53,7 +53,7 @@ const chatnode = (props: NodeProps<chatNode>) => {
                       className={cn(
                         "rounded-xl p-2 whitespace-pre-wrap",
                         message.role === "user"
-                          ? "w-2/3 bg-primary-foreground"
+                          ? "w-2/3 bg-primary text-black"
                           : "text-start"
                       )}
                     >

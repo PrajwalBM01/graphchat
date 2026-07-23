@@ -7,13 +7,18 @@ import type {
   Edge as DbEdge,
   Message as DbMessage,
 } from "@/app/generated/prisma/client"
-import { ReactFlowProvider } from "@xyflow/react"
+import { Edge, ReactFlowProvider } from "@xyflow/react"
 import {
   ContextMenu,
   ContextMenuTrigger,
   ContextMenuContent,
   ContextMenuItem,
+  ContextMenuSub,
+  ContextMenuSubTrigger,
+  ContextMenuSubContent,
+  ContextMenuGroup,
 } from "@/components/ui/context-menu"
+import { appNodes } from "@/components/reactflow/nodes"
 const Rfcanvas = dynamic(() => import("@/app/chat/chat-canvas"), {
   ssr: false,
   loading: () => (
@@ -23,27 +28,29 @@ const Rfcanvas = dynamic(() => import("@/app/chat/chat-canvas"), {
   ),
 })
 
-export type NodeCombined = { messages: DbMessage[] } & DbNode
-
 export default function ChatCanvas({
   nodes,
   edges,
 }: {
-  nodes: NodeCombined[]
-  edges: DbEdge[]
+  nodes: appNodes[]
+  edges: Edge[]
 }) {
   const { state } = useSidebar()
 
   return (
-    <div className="h-dvh w-full border border-red-400">
-      {state === "collapsed" && (
-        <span className="absolute z-100 p-2">
-          <SidebarTrigger />
-        </span>
-      )}
-      <ReactFlowProvider>
-        <Rfcanvas dbnodes={nodes} dbedges={edges} />
-      </ReactFlowProvider>
-    </div>
+    <ContextMenu>
+      <ContextMenuTrigger>
+        <div className="h-dvh w-full">
+          {state === "collapsed" && (
+            <span className="absolute z-100 p-2">
+              <SidebarTrigger />
+            </span>
+          )}
+          <ReactFlowProvider>
+            <Rfcanvas rfnodes={nodes} rfedges={edges} />
+          </ReactFlowProvider>
+        </div>
+      </ContextMenuTrigger>
+    </ContextMenu>
   )
 }

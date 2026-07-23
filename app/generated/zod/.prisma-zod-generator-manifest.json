@@ -1,0 +1,24 @@
+{
+  "version": "1.0",
+  "generatorVersion": "0.0.1",
+  "generatedAt": "2026-07-23T11:09:50.084Z",
+  "outputPath": "D:\\CodeX\\My projects\\personal\\graphchat\\app\\generated\\zod",
+  "files": [
+    "schemas\\enums\\TransactionIsolationLevel.schema.ts",
+    "schemas\\enums\\CanvasScalarFieldEnum.schema.ts",
+    "schemas\\enums\\NodeScalarFieldEnum.schema.ts",
+    "schemas\\enums\\EdgeScalarFieldEnum.schema.ts",
+    "schemas\\enums\\MessageScalarFieldEnum.schema.ts",
+    "schemas\\enums\\SortOrder.schema.ts",
+    "schemas\\enums\\NullableJsonNullValueInput.schema.ts",
+    "schemas\\enums\\QueryMode.schema.ts",
+    "schemas\\enums\\NullsOrder.schema.ts",
+    "schemas\\enums\\JsonNullValueFilter.schema.ts",
+    "schemas\\enums\\NodeType.schema.ts",
+    "schemas\\enums\\Role.schema.ts"
+  ],
+  "directories": [
+    "schemas\\enums"
+  ],
+  "singleFileMode": false
+}
