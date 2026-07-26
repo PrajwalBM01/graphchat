@@ -6,8 +6,8 @@ import React, { useState } from "react"
 import type { Message as DbMessage } from "@/app/generated/prisma/client"
 import type { chatNode } from "./index"
 import ReactMarkDown from "react-markdown"
-import { ChatOnFinishCallback } from "ai"
-import { updateMessages } from "@/app/chat/chatActions"
+import { ChatOnFinishCallback, DefaultChatTransport } from "ai"
+import { updateMessages } from "@/actions/chatActions"
 
 //helpers
 const toUiMessage = (messages: DbMessage[]): UIMessage[] =>
@@ -25,10 +25,21 @@ const chatnode = (props: NodeProps<chatNode>) => {
     onFinish: ({ message, messages, finishReason }) => {
       messages.slice(-2).map((msg, _i) => updateMessages(props.id, msg))
     },
+    // transport: new DefaultChatTransport({
+    //   body: {
+    //     nodeId: props.id,
+    //   },
+    // }),
   })
+
   return (
-    <div className="h-auto w-[350px] rounded-xl bg-accent p-2 shadow-[1px_1px_7px_4px_rgba(0,0,0,0.1)]">
-      <Handle type="target" position={Position.Top} id="target-a" />
+    <div className="h-auto w-[500px] rounded-xl bg-accent/20 p-2 shadow-[1px_1px_7px_4px_rgba(0,0,0,0.1)] backdrop-blur-xs">
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="target-a"
+        isConnectableStart={false}
+      />
       <div
         className={cn(
           "stretch mx-auto flex w-full flex-col p-1",
@@ -53,7 +64,7 @@ const chatnode = (props: NodeProps<chatNode>) => {
                       className={cn(
                         "rounded-xl p-2 whitespace-pre-wrap",
                         message.role === "user"
-                          ? "w-2/3 bg-primary text-black"
+                          ? "w-2/3 bg-accent"
                           : "text-start"
                       )}
                     >
@@ -70,7 +81,7 @@ const chatnode = (props: NodeProps<chatNode>) => {
       <form
         onSubmit={(e) => {
           e.preventDefault()
-          sendMessage({ text: input })
+          sendMessage({ text: input }, { body: { nodeId: props.id } })
           setinput("")
         }}
       >

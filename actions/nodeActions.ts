@@ -1,7 +1,7 @@
 "use server"
 import prisma from "@/lib/prisma"
 import { z } from "zod"
-import { NodeType } from "../generated/prisma/enums"
+import { NodeType } from "../app/generated/prisma/enums"
 import {
   CreateNodeSchema,
   createNodeType,
@@ -9,9 +9,11 @@ import {
   deleteNodeType,
   UpdateNodePosSchema,
   updateNodePosType,
+  updateTextNodeSchema,
+  updateTextNodeType,
 } from "@/types/nodeSchema"
 
-export async function InsertNode(data: createNodeType) {
+export async function insertNode(data: createNodeType) {
   const validFields = CreateNodeSchema.safeParse(data)
   console.log(data)
   console.log(validFields)
@@ -32,6 +34,7 @@ export async function InsertNode(data: createNodeType) {
   })
 }
 
+//update
 export async function updateNodePos(data: updateNodePosType) {
   console.log(data)
   const validateFileds = UpdateNodePosSchema.safeParse(data)
@@ -50,6 +53,22 @@ export async function updateNodePos(data: updateNodePosType) {
   })
 }
 
+export async function updateTextNode(data: updateTextNodeType) {
+  const validField = updateTextNodeSchema.safeParse(data)
+
+  if (!validField.success) {
+    throw new Error("invalid input data")
+  }
+
+  await prisma.node.update({
+    where: { id: validField.data.nodeId },
+    data: {
+      data: validField.data.content,
+    },
+  })
+}
+
+//delete
 export async function deleteNode(data: deleteNodeType) {
   const validateFileds = DeleteNodeSchema.safeParse(data)
 

@@ -8,8 +8,6 @@ const webnode = (props: NodeProps<webNode>) => {
   const [input, setinput] = useState(props.data.url)
   return (
     <div className="h-auto w-[250px] rounded-xl bg-accent p-2">
-      <Handle type="target" position={Position.Left} id="target-a" />
-
       <textarea
         className="field-sizing-content min-h-[100px] w-full resize-none overflow-visible outline-0"
         placeholder="Paste the web link here"

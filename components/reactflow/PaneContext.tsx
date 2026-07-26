@@ -11,7 +11,7 @@ import { useParams } from "next/navigation"
 import { NodeType } from "@/app/generated/prisma/enums"
 import { createId } from "@paralleldrive/cuid2"
 import { createNodeData } from "@/lib/node-data"
-import { InsertNode } from "@/app/chat/nodeActions"
+import { insertNode } from "@/actions/nodeActions"
 
 const PaneContext = () => {
   const { id } = useParams<{ id: string }>()
@@ -32,20 +32,20 @@ const PaneContext = () => {
     return () => window.removeEventListener("contextmenu", getPosition)
   }, [])
 
-  const createNode = (type: NodeType) => {
+  const createNode = async (type: NodeType) => {
     const nodeId = createId()
     const data = createNodeData(type)
     console.log(data)
-    addNodes({
-      id: nodeId,
-      position: { x: flowPositions.current.x, y: flowPositions.current.y },
-      ...data,
-    })
-    InsertNode({
+    await insertNode({
       canvasId: id,
       nodeId: nodeId,
       posX: flowPositions.current.x,
       posY: flowPositions.current.y,
+      ...data,
+    })
+    addNodes({
+      id: nodeId,
+      position: { x: flowPositions.current.x, y: flowPositions.current.y },
       ...data,
     })
   }

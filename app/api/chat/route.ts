@@ -9,8 +9,12 @@ import { google } from "@ai-sdk/google"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function POST(req: NextRequest) {
-  const { messages }: { messages: UIMessage[] } = await req.json()
-  console.log("reciiving the req", req)
+  const { messages, nodeId }: { messages: UIMessage[]; nodeId: string } =
+    await req.json()
+  // const reqData = await req.json()
+  // console.log("reciiving the req", reqData)
+  // console.log("body req", reqData)
+  console.log("nodeId", nodeId)
 
   const result = streamText({
     model: google("gemini-2.5-flash"),
@@ -22,4 +26,3 @@ export async function POST(req: NextRequest) {
     stream: toUIMessageStream({ stream: result.stream }),
   })
 }
-

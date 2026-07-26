@@ -8,6 +8,7 @@ import {
   WebNodeDataSchema,
 } from "@/components/reactflow/nodes"
 import type { Message, Node } from "@/app/generated/prisma/client"
+import { Edge } from "@xyflow/react"
 
 export type NodeCombined = { messages: Message[] } & Node
 
@@ -87,10 +88,12 @@ const page = async ({ params }: { params: Promise<{ id: string }> }) => {
     .map(toAppNode)
     .filter((n): n is appNodes => n !== null)
 
-  const canvasEdges = canvasData.edges.map((e) => ({
+  const canvasEdges: Edge[] = canvasData.edges.map((e) => ({
     id: e.id,
     source: e.sourceNodeId,
     target: e.targetNodeId,
+    className: 'custom-edge',
+
   }))
 
   return <ChatCanvas nodes={canvasNodes} edges={canvasEdges} />

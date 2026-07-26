@@ -79,6 +79,13 @@ export const CreateNodeSchema = z.discriminatedUnion("type", [
 
 export type createNodeType = z.infer<typeof CreateNodeSchema>
 
+export const updateTextNodeSchema = z.object({
+  nodeId: z.string(),
+  content: TextNodeDataSchema,
+})
+
+export type updateTextNodeType = z.infer<typeof updateTextNodeSchema>
+
 export const DeleteNodeSchema = z.object({
   nodeId: z.string(),
 })

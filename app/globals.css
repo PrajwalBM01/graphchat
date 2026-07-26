@@ -132,3 +132,8 @@
     @apply font-sans;
   }
 }
+
+.custom-edge .react-flow__edge-path {
+  stroke: var(--primary);
+  stroke-width: 3px;
+}
