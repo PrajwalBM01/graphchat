@@ -23,13 +23,13 @@ const textnode = (props: NodeProps<textNode>) => {
         nodeId: props.id,
         content: { title: props.data.title, content: content },
       })
-    }, 2000)
+    }, 1000)
   }
   return (
     <div className="h-auto min-h-25 w-[450px] rounded-xl bg-accent p-2">
       <div>
         <textarea
-          className="field-sizing-content min-h-25 w-full resize-none overflow-visible outline-0"
+          className="nodrag field-sizing-content min-h-25 w-full resize-none overflow-visible outline-0"
           placeholder="Your text goes here"
           value={content}
           onChange={onInputChange}

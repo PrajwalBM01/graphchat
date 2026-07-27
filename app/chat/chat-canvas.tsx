@@ -5,6 +5,9 @@ import {
   Controls,
   Edge,
   MiniMap,
+  Node,
+  NodeMouseHandler,
+  NodeTypes,
   OnConnect,
   OnConnectEnd,
   OnNodeDrag,
@@ -143,9 +146,18 @@ const page = ({
     [getEdges]
   )
 
+  const handleNodeClick: NodeMouseHandler = useCallback(
+    (event: React.MouseEvent, node:Node) => {
+      console.log(event, node)
+      console.log(node.className)
+    },
+    []
+  )
+
   return (
     <ReactFlow
       debug={true}
+      onNodeClick={handleNodeClick}
       onNodeContextMenu={(e) => {
         e.preventDefault()
       }}

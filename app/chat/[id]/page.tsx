@@ -92,8 +92,7 @@ const page = async ({ params }: { params: Promise<{ id: string }> }) => {
     id: e.id,
     source: e.sourceNodeId,
     target: e.targetNodeId,
-    className: 'custom-edge',
-
+    className: "custom-edge",
   }))
 
   return <ChatCanvas nodes={canvasNodes} edges={canvasEdges} />

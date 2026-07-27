@@ -8,6 +8,7 @@ import type { chatNode } from "./index"
 import ReactMarkDown from "react-markdown"
 import { ChatOnFinishCallback, DefaultChatTransport } from "ai"
 import { updateMessages } from "@/actions/chatActions"
+import { useCanSelect } from "@/hooks/use-select"
 
 //helpers
 const toUiMessage = (messages: DbMessage[]): UIMessage[] =>
@@ -18,22 +19,32 @@ const toUiMessage = (messages: DbMessage[]): UIMessage[] =>
   }))
 
 const chatnode = (props: NodeProps<chatNode>) => {
+  const select = useCanSelect()
   const [input, setinput] = useState("")
   const { messages, sendMessage } = useChat({
     id: props.id,
     messages: toUiMessage(props.data.messages),
-    onFinish: ({ message, messages, finishReason }) => {
-      messages.slice(-2).map((msg, _i) => updateMessages(props.id, msg))
-    },
-    // transport: new DefaultChatTransport({
-    //   body: {
-    //     nodeId: props.id,
-    //   },
-    // }),
+    // onFinish: ({ message, messages, finishReason }) => {
+    //   messages.slice(-2).map((msg, _i) => updateMessages(props.id, msg))
+    // },
+    transport: new DefaultChatTransport({
+      prepareSendMessagesRequest: ({ id, messages }) => {
+        return {
+          body: {
+            nodeId: props.id,
+            message: messages[messages.length - 1],
+          },
+        }
+      },
+    }),
   })
 
   return (
-    <div className="h-auto w-[500px] rounded-xl bg-accent/20 p-2 shadow-[1px_1px_7px_4px_rgba(0,0,0,0.1)] backdrop-blur-xs">
+    <div
+      className={cn(
+        "h-auto w-[500px] rounded-xl bg-accent p-2 shadow-[1px_1px_7px_4px_rgba(0,0,0,0.1)]"
+      )}
+    >
       <Handle
         type="target"
         position={Position.Top}
@@ -43,6 +54,7 @@ const chatnode = (props: NodeProps<chatNode>) => {
       <div
         className={cn(
           "stretch mx-auto flex w-full flex-col p-1",
+          select && "nodrag cursor-auto select-text",
           messages.length === 0 && "py-24"
         )}
       >
@@ -63,9 +75,7 @@ const chatnode = (props: NodeProps<chatNode>) => {
                       key={`${message.id}-${i}`}
                       className={cn(
                         "rounded-xl p-2 whitespace-pre-wrap",
-                        message.role === "user"
-                          ? "w-2/3 bg-accent"
-                          : "text-start"
+                        message.role === "user" ? "w-2/3 bg-card" : "text-start"
                       )}
                     >
                       <ReactMarkDown>{part.text}</ReactMarkDown>
@@ -81,7 +91,7 @@ const chatnode = (props: NodeProps<chatNode>) => {
       <form
         onSubmit={(e) => {
           e.preventDefault()
-          sendMessage({ text: input }, { body: { nodeId: props.id } })
+          sendMessage({ text: input })
           setinput("")
         }}
       >

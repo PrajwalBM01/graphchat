@@ -7,22 +7,39 @@ import {
 } from "ai"
 import { google } from "@ai-sdk/google"
 import { NextRequest, NextResponse } from "next/server"
+import { getContext, loadMessages } from "./helper"
+import { updateMessages } from "@/actions/chatActions"
+import { createId } from "@paralleldrive/cuid2"
 
 export async function POST(req: NextRequest) {
-  const { messages, nodeId }: { messages: UIMessage[]; nodeId: string } =
+  const { message, nodeId }: { message: UIMessage; nodeId: string } =
     await req.json()
-  // const reqData = await req.json()
-  // console.log("reciiving the req", reqData)
-  // console.log("body req", reqData)
-  console.log("nodeId", nodeId)
+
+  await updateMessages(nodeId, message)
+
+  const messages = await loadMessages(nodeId)
+  messages.push({ id: message.id, role: message.role, parts: message.parts })
+
+  //context
+  const system = await getContext(nodeId)
+
+  console.log("system prompt", system)
 
   const result = streamText({
     model: google("gemini-2.5-flash"),
+    instructions: system,
     messages: await convertToModelMessages(messages),
   })
-  console.log(result)
 
   return createUIMessageStreamResponse({
-    stream: toUIMessageStream({ stream: result.stream }),
+    stream: toUIMessageStream({
+      stream: result.stream,
+      onEnd: async (endData) => {
+        await updateMessages(nodeId, {
+          ...endData.responseMessage,
+          id: createId(),
+        })
+      },
+    }),
   })
 }
