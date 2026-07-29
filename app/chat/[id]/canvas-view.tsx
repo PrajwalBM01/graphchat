@@ -19,6 +19,7 @@ import {
   ContextMenuGroup,
 } from "@/components/ui/context-menu"
 import { appNodes } from "@/components/reactflow/nodes"
+import { Sheet } from "lucide-react"
 const Rfcanvas = dynamic(() => import("@/app/chat/chat-canvas"), {
   ssr: false,
   loading: () => (

@@ -9,9 +9,12 @@ import ReactMarkDown from "react-markdown"
 import { ChatOnFinishCallback, DefaultChatTransport } from "ai"
 import { updateMessages } from "@/actions/chatActions"
 import { useCanSelect } from "@/hooks/use-select"
+import { PanelRight, Trash } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { useChatSidebar } from "@/components/reactflow/SidebarContext"
 
 //helpers
-const toUiMessage = (messages: DbMessage[]): UIMessage[] =>
+export const toUiMessage = (messages: DbMessage[]): UIMessage[] =>
   messages?.map((m) => ({
     id: m.id,
     role: m.role,
@@ -19,8 +22,8 @@ const toUiMessage = (messages: DbMessage[]): UIMessage[] =>
   }))
 
 const chatnode = (props: NodeProps<chatNode>) => {
-  const select = useCanSelect()
   const [input, setinput] = useState("")
+  const { openSidebar } = useChatSidebar()
   const { messages, sendMessage } = useChat({
     id: props.id,
     messages: toUiMessage(props.data.messages),
@@ -42,19 +45,35 @@ const chatnode = (props: NodeProps<chatNode>) => {
   return (
     <div
       className={cn(
-        "h-auto w-[500px] rounded-xl bg-accent p-2 shadow-[1px_1px_7px_4px_rgba(0,0,0,0.1)]"
+        "group flex h-auto w-[550px] cursor-auto flex-col gap-2 rounded-xl bg-accent shadow-[1px_1px_7px_4px_rgba(0,0,0,0.1)]"
       )}
     >
-      <Handle
-        type="target"
-        position={Position.Top}
-        id="target-a"
-        isConnectableStart={false}
-      />
+      <div className="custom_drag_handle relative flex h-12 cursor-grab items-center justify-between rounded-t-xl bg-accent p-4 transition-colors duration-300 group-hover:bg-black/10 group-hover:dark:bg-background/40">
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="target-a"
+          isConnectableStart={false}
+        />
+        <div className="rounded-lg border p-1">{props.data.title}</div>
+        <div className="flex items-center justify-center gap-2 opacity-0 transition-all duration-300 group-hover:opacity-100">
+          <button
+            type="button"
+            title="Sidebar"
+            className="nodrag"
+            onClick={() => openSidebar(props.id)}
+          >
+            <PanelRight className="cursor-pointer" size={20} />
+          </button>
+          <div title="Delete">
+            <Trash className="cursor-pointer stroke-destructive" size={20} />
+          </div>
+        </div>
+        <Handle type="source" position={Position.Right} id="source-b" />
+      </div>
       <div
         className={cn(
-          "stretch mx-auto flex w-full flex-col p-1",
-          select && "nodrag cursor-auto select-text",
+          "stretch nodrag mx-auto flex w-full flex-col p-1 select-text",
           messages.length === 0 && "py-24"
         )}
       >
@@ -86,23 +105,21 @@ const chatnode = (props: NodeProps<chatNode>) => {
             })}
           </div>
         ))}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            sendMessage({ text: input })
+            setinput("")
+          }}
+        >
+          <input
+            className="w-full rounded-md border p-1 text-sm"
+            value={input}
+            placeholder="Say something..."
+            onChange={(e) => setinput(e.currentTarget.value)}
+          />
+        </form>
       </div>
-
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          sendMessage({ text: input })
-          setinput("")
-        }}
-      >
-        <input
-          className="w-full rounded-md border p-1 text-sm"
-          value={input}
-          placeholder="Say something..."
-          onChange={(e) => setinput(e.currentTarget.value)}
-        />
-      </form>
-      <Handle type="source" position={Position.Right} id="source-b" />
     </div>
   )
 }

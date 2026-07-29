@@ -25,13 +25,17 @@ import {
   updateNodePos,
 } from "../../actions/nodeActions"
 import PaneContext from "@/components/reactflow/PaneContext"
-import { useCallback } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { createId } from "@paralleldrive/cuid2"
 import { createNodeData } from "@/lib/node-data"
 import { useParams } from "next/navigation"
 import { insertEdge } from "@/actions/edgeActions"
 import { cycleCheck } from "@/lib/canvasHelper"
 import { toast } from "sonner"
+import { Sheet } from "@/components/ui/sheet"
+import { ChatSidebarContext } from "@/components/reactflow/SidebarContext"
+import ChatSidebar from "@/components/chat-sidebar"
+import { toUiMessage } from "@/components/reactflow/nodes/chatnode"
 
 const handleNodeDrag: OnNodeDrag = (event, node) => {
   updateNodePos({
@@ -58,6 +62,22 @@ const page = ({
   const [edges, setEdges, onEdgesChange] = useEdgesState(rfedges)
   const { resolvedTheme } = useTheme()
   const { screenToFlowPosition, getEdges } = useReactFlow()
+  const [openNodeId, setOpenNodeId] = useState<string | null>(null)
+
+  // the one node whose sidebar is currently open
+  const openNode = useMemo(
+    () => nodes.find((n) => n.id === openNodeId) ?? null,
+    [nodes, openNodeId]
+  )
+
+  const sidebarCtx = useMemo(
+    () => ({
+      openNodeId,
+      openSidebar: (nodeId: string) => setOpenNodeId(nodeId),
+      closeSidebar: () => setOpenNodeId(null),
+    }),
+    [openNodeId]
+  )
 
   const handleEdgeDrop: OnConnectEnd = useCallback(
     async (event, connectionState) => {
@@ -77,11 +97,17 @@ const page = ({
           canvasId: id,
           posX: positions.x,
           posY: positions.y,
+
           ...nodeData,
         })
 
         setNodes((nodes) =>
-          nodes.concat({ id: nodeId, position: positions, ...nodeData })
+          nodes.concat({
+            id: nodeId,
+            position: positions,
+            dragHandle: ".custom_drag_handle",
+            ...nodeData,
+          })
         )
 
         await insertEdge({
@@ -147,7 +173,7 @@ const page = ({
   )
 
   const handleNodeClick: NodeMouseHandler = useCallback(
-    (event: React.MouseEvent, node:Node) => {
+    (event: React.MouseEvent, node: Node) => {
       console.log(event, node)
       console.log(node.className)
     },
@@ -155,34 +181,52 @@ const page = ({
   )
 
   return (
-    <ReactFlow
-      debug={true}
-      onNodeClick={handleNodeClick}
-      onNodeContextMenu={(e) => {
-        e.preventDefault()
-      }}
-      onConnectEnd={handleEdgeDrop}
-      nodes={nodes}
-      edges={edges}
-      nodeTypes={nodeTypes}
-      fitView
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onNodeDragStop={handleNodeDrag}
-      onNodesDelete={(nodes) => {
-        nodes.map((n) => {
-          deleteNode({ nodeId: n.id })
-        })
-      }}
-      onConnect={handleEdgeConnection}
-      colorMode={resolvedTheme === "dark" ? "dark" : "light"}
-      // isValidConnection={validateConnection}
-    >
-      <PaneContext />
-      <MiniMap />
-      <Background />
-      <Controls />
-    </ReactFlow>
+    <ChatSidebarContext value={sidebarCtx}>
+      <Sheet
+        open={openNodeId !== null}
+        onOpenChange={(open) => {
+          if (!open) setOpenNodeId(null)
+        }}
+      >
+        <ReactFlow
+          debug={true}
+          onNodeClick={handleNodeClick}
+          onNodeContextMenu={(e) => {
+            e.preventDefault()
+          }}
+          onConnectEnd={handleEdgeDrop}
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          fitView
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onNodeDragStop={handleNodeDrag}
+          onNodesDelete={(nodes) => {
+            nodes.map((n) => {
+              deleteNode({ nodeId: n.id })
+            })
+          }}
+          onConnect={handleEdgeConnection}
+          colorMode={resolvedTheme === "dark" ? "dark" : "light"}
+          // isValidConnection={validateConnection}
+        >
+          <PaneContext />
+          <MiniMap />
+          <Background />
+          <Controls />
+        </ReactFlow>
+
+        {/* exactly one SheetContent for the whole canvas */}
+        {openNode?.type === "chat" && (
+          <ChatSidebar
+            key={openNode.id}
+            messages={toUiMessage(openNode.data.messages)}
+            title={openNode.data.title}
+          />
+        )}
+      </Sheet>
+    </ChatSidebarContext>
   )
 }
 

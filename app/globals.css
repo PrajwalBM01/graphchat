@@ -137,3 +137,22 @@
   stroke: var(--primary);
   stroke-width: 3px;
 }
+
+.react-flow__handle-right {
+  background-color: var(--background);
+  border: 2px solid var(--color-primary);
+  border-radius: 0;
+  border-radius: 8;
+  height: 30;
+  width: 15;
+  top: 45;
+}
+
+.react-flow__handle-left {
+  background-color: var(--background);
+  border: 2px solid var(--color-primary);
+  border-radius: 8;
+  height: 30;
+  width: 15;
+  top: 45;
+}

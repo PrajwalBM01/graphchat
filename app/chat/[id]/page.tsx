@@ -16,6 +16,7 @@ const toAppNode = (n: NodeCombined): appNodes | null => {
   const baseProperties = {
     id: n.id,
     position: { x: n.positionX, y: n.positionY },
+    dragHandle: ".custom_drag_handle",
   }
 
   switch (n.type) {

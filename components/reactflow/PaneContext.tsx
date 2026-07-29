@@ -45,6 +45,7 @@ const PaneContext = () => {
     })
     addNodes({
       id: nodeId,
+      dragHandle: ".custom_drag_handle",
       position: { x: flowPositions.current.x, y: flowPositions.current.y },
       ...data,
     })
