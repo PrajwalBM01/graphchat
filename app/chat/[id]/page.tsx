@@ -62,7 +62,7 @@ const toAppNode = (n: NodeCombined): appNodes | null => {
         type: "chat",
         data: {
           title: parsed.data.title,
-          model: parsed.data.title,
+          model: parsed.data.model,
           messages: n.messages,
         },
       }

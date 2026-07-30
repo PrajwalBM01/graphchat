@@ -2,16 +2,27 @@
 import { cn } from "@/lib/utils"
 import { UIMessage, useChat } from "@ai-sdk/react"
 import { Handle, Node, NodeProps, Position } from "@xyflow/react"
-import React, { useState } from "react"
+import React, { MouseEventHandler, useState } from "react"
 import type { Message as DbMessage } from "@/app/generated/prisma/client"
 import type { chatNode } from "./index"
 import ReactMarkDown from "react-markdown"
-import { ChatOnFinishCallback, DefaultChatTransport } from "ai"
-import { updateMessages } from "@/actions/chatActions"
-import { useCanSelect } from "@/hooks/use-select"
-import { PanelRight, Trash } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { DefaultChatTransport } from "ai"
+import {
+  ArrowUp,
+  BotMessageSquare,
+  PanelRight,
+  Split,
+  Trash,
+} from "lucide-react"
 import { useChatSidebar } from "@/components/reactflow/SidebarContext"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 //helpers
 export const toUiMessage = (messages: DbMessage[]): UIMessage[] =>
@@ -22,14 +33,16 @@ export const toUiMessage = (messages: DbMessage[]): UIMessage[] =>
   }))
 
 const chatnode = (props: NodeProps<chatNode>) => {
+  const [isSelected, setisSelected] = useState(false)
+  const [selectedData, setselectedData] = useState<{
+    messageId: string
+    selectedText: string
+  } | null>(null)
   const [input, setinput] = useState("")
   const { openSidebar } = useChatSidebar()
-  const { messages, sendMessage } = useChat({
+  const { messages, sendMessage, status } = useChat({
     id: props.id,
     messages: toUiMessage(props.data.messages),
-    // onFinish: ({ message, messages, finishReason }) => {
-    //   messages.slice(-2).map((msg, _i) => updateMessages(props.id, msg))
-    // },
     transport: new DefaultChatTransport({
       prepareSendMessagesRequest: ({ id, messages }) => {
         return {
@@ -42,69 +55,110 @@ const chatnode = (props: NodeProps<chatNode>) => {
     }),
   })
 
+  const handleGlobalSelection = () => {
+    const selectionText = window.getSelection()
+    const text = selectionText?.toString().trim()
+    if (!text) {
+      setisSelected(false)
+      setselectedData(null)
+      return
+    }
+    console.log("selection", selectionText, selectionText?.toString())
+
+    const matchedElemnet =
+      selectionText?.anchorNode?.parentElement?.closest("[data-item-id]")
+
+    if (matchedElemnet) {
+      const messageId = matchedElemnet.getAttribute("data-item-id")
+      if (messageId && text) {
+        setisSelected(true)
+        setselectedData({
+          messageId: messageId,
+          selectedText: text,
+        })
+      }
+    }
+  }
+
   return (
     <div
       className={cn(
-        "group flex h-auto w-[550px] cursor-auto flex-col gap-2 rounded-xl bg-accent shadow-[1px_1px_7px_4px_rgba(0,0,0,0.1)]"
+        "group flex h-auto w-[550px] cursor-auto flex-col gap-2 rounded-xl bg-accent shadow-[0px_0px_5px_3px_rgba(0,0,0,0.1)]"
       )}
     >
-      <div className="custom_drag_handle relative flex h-12 cursor-grab items-center justify-between rounded-t-xl bg-accent p-4 transition-colors duration-300 group-hover:bg-black/10 group-hover:dark:bg-background/40">
+      <div className="custom_drag_handle relative flex cursor-grab items-center justify-center rounded-t-xl bg-accent p-2 transition-colors duration-300 group-hover:bg-black/10 group-hover:dark:bg-background/40">
         <Handle
           type="target"
           position={Position.Left}
           id="target-a"
           isConnectableStart={false}
         />
-        <div className="rounded-lg border p-1">{props.data.title}</div>
-        <div className="flex items-center justify-center gap-2 opacity-0 transition-all duration-300 group-hover:opacity-100">
-          <button
-            type="button"
+        <div className="flex items-center justify-center gap-2 rounded-lg p-1 shadow-[0px_0px_2px_1px_rgba(0,0,0,0.1)] dark:border">
+          <BotMessageSquare strokeWidth={1.5} />
+          <h1 className="text-xl font-medium">{props.data.title}</h1>
+        </div>
+        <div className="absolute right-4 flex items-center justify-center gap-2 opacity-0 transition-all duration-300 group-hover:opacity-100">
+          <div
             title="Sidebar"
             className="nodrag"
             onClick={() => openSidebar(props.id)}
           >
-            <PanelRight className="cursor-pointer" size={20} />
-          </button>
+            <PanelRight
+              className="cursor-pointer"
+              strokeWidth={1.5}
+              size={20}
+            />
+          </div>
           <div title="Delete">
-            <Trash className="cursor-pointer stroke-destructive" size={20} />
+            <Trash className="cursor-pointer" strokeWidth={1.5} size={20} />
           </div>
         </div>
         <Handle type="source" position={Position.Right} id="source-b" />
       </div>
-      <div
-        className={cn(
-          "stretch nodrag mx-auto flex w-full flex-col p-1 select-text",
-          messages.length === 0 && "py-24"
-        )}
-      >
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={cn(
-              "flex",
-              message.role === "user" ? "justify-end" : "justify-start"
-            )}
-          >
-            {/* {message.role === "user" ? "User:" : "AI:"} */}
-            {message.parts.map((part, i) => {
-              switch (part.type) {
-                case "text":
-                  return (
-                    <div
-                      key={`${message.id}-${i}`}
-                      className={cn(
-                        "rounded-xl p-2 whitespace-pre-wrap",
-                        message.role === "user" ? "w-2/3 bg-card" : "text-start"
-                      )}
-                    >
-                      <ReactMarkDown>{part.text}</ReactMarkDown>
-                      {/* {part.text} */}
-                    </div>
-                  )
-              }
-            })}
-          </div>
-        ))}
+      <div className="flex flex-col gap-2 p-2">
+        <div
+          onMouseUp={handleGlobalSelection}
+          className={cn(
+            "stretch nodrag mx-auto flex h-auto min-h-50 w-full flex-col gap-2 p-1 select-text"
+          )}
+        >
+          {messages.map((message, index) => (
+            <div
+              data-item-id={message.id}
+              data-item-index={index}
+              key={message.id}
+              className={cn(
+                "flex",
+                message.role === "user" ? "justify-end" : "justify-start"
+              )}
+            >
+              {message.parts.map((part, i) => {
+                switch (part.type) {
+                  case "text":
+                    return (
+                      <div
+                        key={`${message.id}-${i}`}
+                        className={cn(
+                          "relative rounded-xl p-2 whitespace-pre-wrap",
+                          message.role === "user"
+                            ? "w-2/3 bg-card"
+                            : "text-start"
+                        )}
+                      >
+                        {isSelected &&
+                          message.id === selectedData?.messageId && (
+                            <span className="absolute top-0 -right-30 flex gap-1 rounded-xl bg-primary p-2 text-lg text-black">
+                              <Split size={30} className="rotate-90" /> Branch
+                            </span>
+                          )}
+                        <ReactMarkDown>{part.text}</ReactMarkDown>
+                      </div>
+                    )
+                }
+              })}
+            </div>
+          ))}
+        </div>
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -112,12 +166,52 @@ const chatnode = (props: NodeProps<chatNode>) => {
             setinput("")
           }}
         >
-          <input
-            className="w-full rounded-md border p-1 text-sm"
+          <textarea
+            className="field-sizing-content h-auto max-h-30 min-h-20 w-full resize-none items-stretch overflow-y-auto rounded-b-md border-t-2 p-2 outline-0"
             value={input}
-            placeholder="Say something..."
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault()
+                e.currentTarget.form?.requestSubmit()
+              }
+            }}
+            placeholder={
+              messages.length === 0
+                ? "What shall we discuss?"
+                : "Write a message..."
+            }
             onChange={(e) => setinput(e.currentTarget.value)}
           />
+          <div className="flex items-center justify-between p-1">
+            <div>
+              <Select>
+                <SelectTrigger className="">
+                  <SelectValue placeholder="Auto" />
+                </SelectTrigger>
+                <SelectContent className="border-none bg-transparent">
+                  <SelectGroup>
+                    <SelectItem value="light">Light</SelectItem>
+                    <SelectItem value="dark">Dark</SelectItem>
+                    <SelectItem value="system">System</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <button
+                disabled={status === "streaming" ? true : false}
+                type="submit"
+                className={cn(
+                  "rounded-lg p-1 text-black",
+                  status === "streaming"
+                    ? "bg-primary-foreground"
+                    : "bg-primary"
+                )}
+              >
+                <ArrowUp size={25} />
+              </button>
+            </div>
+          </div>
         </form>
       </div>
     </div>

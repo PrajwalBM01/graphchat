@@ -37,18 +37,18 @@ enum status {
 
 //schemas
 export const ChatNodeDataSchema = z.object({
-  title: z.string().default("Untitled Chat Node"),
+  title: z.string().default("Untitled"),
   model: z.string().default("gemini-2.5-flash"),
   messages: z.array(MessageSchema).default([]),
 })
 
 export const TextNodeDataSchema = z.object({
-  title: z.string().default("Untited Text Node"),
+  title: z.string().default("Untited"),
   content: z.string().default(""),
 })
 
 export const WebNodeDataSchema = z.object({
-  title: z.string().default("Untitled Web Node"),
+  title: z.string().default("Untitled"),
   url: z.string().default(""),
   status: z.enum(status).default(status.idle),
 })

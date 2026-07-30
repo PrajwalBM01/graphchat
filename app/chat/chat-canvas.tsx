@@ -174,8 +174,8 @@ const page = ({
 
   const handleNodeClick: NodeMouseHandler = useCallback(
     (event: React.MouseEvent, node: Node) => {
-      console.log(event, node)
-      console.log(node.className)
+      // console.log(event, node)
+      // console.log(node.className)
     },
     []
   )

@@ -27,7 +27,7 @@ const ChatSidebar = ({
   return (
     <SheetContent className="overflow-y-scroll bg-accent data-[side=right]:sm:max-w-lg">
       <SheetHeader>
-        <SheetTitle>{title}</SheetTitle>
+        <SheetTitle className="hidden">{title}</SheetTitle>
         <SheetDescription className="hidden">
           Chat history in side view
         </SheetDescription>

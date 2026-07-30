@@ -4,6 +4,7 @@ import { Handle, NodeProps, Position } from "@xyflow/react"
 import { Input } from "@/components/ui/input"
 import { textNode } from "./index"
 import { updateTextNode } from "@/actions/nodeActions"
+import { PanelRight, Text, Trash, Type } from "lucide-react"
 
 const textnode = (props: NodeProps<textNode>) => {
   const [content, setcontent] = useState(props.data.content)
@@ -12,7 +13,6 @@ const textnode = (props: NodeProps<textNode>) => {
   const onInputChange = (
     event: ChangeEvent<HTMLTextAreaElement, HTMLTextAreaElement>
   ) => {
-    console.log(event)
     if (timerRef.current) {
       clearTimeout(timerRef.current)
     }
@@ -21,13 +21,26 @@ const textnode = (props: NodeProps<textNode>) => {
     timerRef.current = setTimeout(() => {
       updateTextNode({
         nodeId: props.id,
-        content: { title: props.data.title, content: content },
+        content: { title: props.data.title, content: event.target.value },
       })
     }, 1000)
   }
   return (
-    <div className="h-auto min-h-25 w-[450px] rounded-xl bg-accent p-2">
-      <div>
+    <div className="group h-auto min-h-50 w-[450px] rounded-xl bg-accent shadow-[0px_0px_5px_3px_rgba(0,0,0,0.1)]">
+      <div className="custom_drag_handle relative flex cursor-grab items-center justify-between rounded-t-xl bg-accent p-2 transition-colors duration-300 group-hover:bg-black/10 group-hover:dark:bg-background/40">
+        {/* <div className="rounded-lg border p-1">{props.data.title}</div> */}
+        <div className="flex items-center justify-center gap-2 rounded-lg p-1 shadow-[0px_0px_2px_1px_rgba(0,0,0,0.1)] dark:border">
+          <Type strokeWidth={1.5} />
+          <h1 className="text-xl font-medium">{props.data.title}</h1>
+        </div>
+        <div className="flex items-center justify-center gap-2 px-1 opacity-0 transition-all duration-300 group-hover:opacity-100">
+          <div title="Delete">
+            <Trash className="cursor-pointer" strokeWidth={1.5} size={20} />
+          </div>
+        </div>
+        <Handle type="source" position={Position.Right} id="source-b" />
+      </div>
+      <div className="p-2">
         <textarea
           className="nodrag field-sizing-content min-h-25 w-full resize-none overflow-visible outline-0"
           placeholder="Your text goes here"
@@ -35,7 +48,6 @@ const textnode = (props: NodeProps<textNode>) => {
           onChange={onInputChange}
         />
       </div>
-      <Handle type="source" position={Position.Right} id={"source-b"} />
     </div>
   )
 }
