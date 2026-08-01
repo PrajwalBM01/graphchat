@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "generatorVersion": "0.0.1",
-  "generatedAt": "2026-07-23T11:09:50.084Z",
+  "generatedAt": "2026-07-31T13:49:52.438Z",
   "outputPath": "D:\\CodeX\\My projects\\personal\\graphchat\\app\\generated\\zod",
   "files": [
     "schemas\\enums\\TransactionIsolationLevel.schema.ts",

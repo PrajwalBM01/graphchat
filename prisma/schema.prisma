@@ -62,6 +62,7 @@ model Edge {
   sourceNode Node @relation("sourceNode", fields: [sourceNodeId],references: [id])
   targetNode Node @relation("targetNode", fields: [targetNodeId], references: [id])
   branchPointMessageId String?
+  branchMessage String?
 }
 
 model Message {

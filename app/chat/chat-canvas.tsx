@@ -7,7 +7,6 @@ import {
   MiniMap,
   Node,
   NodeMouseHandler,
-  NodeTypes,
   OnConnect,
   OnConnectEnd,
   OnNodeDrag,
@@ -15,6 +14,8 @@ import {
   useEdgesState,
   useNodesState,
   useReactFlow,
+  ViewportPortal,
+  XYPosition,
   type IsValidConnection,
 } from "@xyflow/react"
 import { useTheme } from "next-themes"
@@ -25,7 +26,7 @@ import {
   updateNodePos,
 } from "../../actions/nodeActions"
 import PaneContext from "@/components/reactflow/PaneContext"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useMemo, useRef, useState } from "react"
 import { createId } from "@paralleldrive/cuid2"
 import { createNodeData } from "@/lib/node-data"
 import { useParams } from "next/navigation"
@@ -36,6 +37,8 @@ import { Sheet } from "@/components/ui/sheet"
 import { ChatSidebarContext } from "@/components/reactflow/SidebarContext"
 import ChatSidebar from "@/components/chat-sidebar"
 import { toUiMessage } from "@/components/reactflow/nodes/chatnode"
+import { SelectionInfo, useSelection } from "@/hooks/use-select"
+import { Split } from "lucide-react"
 
 const handleNodeDrag: OnNodeDrag = (event, node) => {
   updateNodePos({
@@ -44,11 +47,6 @@ const handleNodeDrag: OnNodeDrag = (event, node) => {
     posY: node.position.y,
   })
 }
-
-// const handleEdgeDrop: OnConnectEnd = (event, connectionState) => {
-//   console.log("event", event)
-//   console.log("coneectionState", connectionState)
-// }
 
 const page = ({
   rfnodes,
@@ -61,22 +59,16 @@ const page = ({
   const [nodes, setNodes, onNodesChange] = useNodesState(rfnodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(rfedges)
   const { resolvedTheme } = useTheme()
-  const { screenToFlowPosition, getEdges } = useReactFlow()
-  const [openNodeId, setOpenNodeId] = useState<string | null>(null)
+  const { screenToFlowPosition, getEdges, getZoom } = useReactFlow()
+  const { selected, clear } = useSelection()
+  // const branchPostion = useRef<XYPosition | null>(null)
 
-  // the one node whose sidebar is currently open
-  const openNode = useMemo(
-    () => nodes.find((n) => n.id === openNodeId) ?? null,
-    [nodes, openNodeId]
-  )
-
-  const sidebarCtx = useMemo(
-    () => ({
-      openNodeId,
-      openSidebar: (nodeId: string) => setOpenNodeId(nodeId),
-      closeSidebar: () => setOpenNodeId(null),
-    }),
-    [openNodeId]
+  const anchor = useMemo(
+    () =>
+      selected
+        ? screenToFlowPosition({ x: selected.rect.right, y: selected.rect.top })
+        : null,
+    [selected, screenToFlowPosition]
   )
 
   const handleEdgeDrop: OnConnectEnd = useCallback(
@@ -97,7 +89,6 @@ const page = ({
           canvasId: id,
           posX: positions.x,
           posY: positions.y,
-
           ...nodeData,
         })
 
@@ -172,61 +163,111 @@ const page = ({
     [getEdges]
   )
 
+  const handleBranching = useCallback(async (selected: SelectionInfo) => {
+    const nodeId = createId()
+    const nodeData = createNodeData("chat")
+    const positions = screenToFlowPosition({
+      x: selected.rect.x + 300,
+      y: selected.rect.y,
+    })
+    const edgeId = createId()
+
+    await insertNode({
+      nodeId: nodeId,
+      canvasId: id,
+      posX: positions.x,
+      posY: positions.y,
+      ...nodeData,
+    })
+
+    setNodes((nodes) =>
+      nodes.concat({
+        id: nodeId,
+        position: positions,
+        dragHandle: ".custom_drag_handle",
+        ...nodeData,
+      })
+    )
+
+    await insertEdge({
+      id: edgeId,
+      canvasId: id,
+      sourceNodeId: selected.nodeId,
+      targetNodeId: nodeId,
+      branchPointMessageId: selected.messageId,
+      branchMessage: selected.text,
+    })
+
+    setEdges((edges) =>
+      edges.concat({
+        id: edgeId,
+        source: selected.nodeId,
+        target: nodeId,
+        className: "custom-edge",
+      })
+    )
+    clear()
+  }, [])
+
   const handleNodeClick: NodeMouseHandler = useCallback(
     (event: React.MouseEvent, node: Node) => {
-      // console.log(event, node)
+      // console.log("nodeclick", event, node)
+      // // branchPostion.current = node.position
       // console.log(node.className)
     },
     []
   )
 
   return (
-    <ChatSidebarContext value={sidebarCtx}>
-      <Sheet
-        open={openNodeId !== null}
-        onOpenChange={(open) => {
-          if (!open) setOpenNodeId(null)
-        }}
-      >
-        <ReactFlow
-          debug={true}
-          onNodeClick={handleNodeClick}
-          onNodeContextMenu={(e) => {
-            e.preventDefault()
-          }}
-          onConnectEnd={handleEdgeDrop}
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          fitView
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onNodeDragStop={handleNodeDrag}
-          onNodesDelete={(nodes) => {
-            nodes.map((n) => {
-              deleteNode({ nodeId: n.id })
-            })
-          }}
-          onConnect={handleEdgeConnection}
-          colorMode={resolvedTheme === "dark" ? "dark" : "light"}
-          // isValidConnection={validateConnection}
-        >
-          <PaneContext />
-          <MiniMap />
-          <Background />
-          <Controls />
-        </ReactFlow>
+    <ReactFlow
+      // onPointerUp={handleGlobalSelection}
+      debug={true}
 
-        {/* exactly one SheetContent for the whole canvas */}
-        {openNode?.type === "chat" && (
-          <ChatSidebar
-            key={openNode.id}
-            messages={toUiMessage(openNode.data.messages)}
-            title={openNode.data.title}
-          />
-        )}
-      </Sheet>
-    </ChatSidebarContext>
+      onNodeClick={handleNodeClick}
+      onNodeContextMenu={(e) => {
+        e.preventDefault()
+      }}
+      onConnectEnd={handleEdgeDrop}
+      nodes={nodes}
+      edges={edges}
+      nodeTypes={nodeTypes}
+      fitView
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      onNodeDragStop={handleNodeDrag}
+      onNodesDelete={(nodes) => {
+        nodes.map((n) => {
+          deleteNode({ nodeId: n.id })
+        })
+      }}
+      onConnect={handleEdgeConnection}
+      colorMode={resolvedTheme === "dark" ? "dark" : "light"}
+      // isValidConnection={validateConnection}
+    >
+      <PaneContext />
+      <MiniMap pannable zoomable />
+      <Background />
+      <Controls />
+      {selected && anchor && (
+        <ViewportPortal>
+          <div
+            className="nodrag nopan pointer-events-auto z-9999 cursor-pointer"
+            style={{ position: "absolute", left: anchor.x + 10, top: anchor.y }}
+          >
+            <button
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                handleBranching(selected)
+                console.log(selected.nodeId, selected.messageId, selected.text)
+              }}
+              className="flex items-center gap-2 rounded-xl bg-primary p-2 text-black shadow"
+            >
+              <Split size={30} className="rotate-90" /> Branch
+            </button>
+          </div>
+        </ViewportPortal>
+      )}
+    </ReactFlow>
   )
 }
 

@@ -1,26 +1,104 @@
-import { useEffect, useState } from "react"
+import { GetZoom } from "@xyflow/system"
+import { useCallback, useEffect, useState } from "react"
 
-export function useCanSelect() {
-  const [select, setSelect] = useState<boolean | undefined>(undefined)
+export type SelectionInfo = {
+  text: string
+  nodeId: string
+  messageId: string | null
+  messageRole: string | null
+  rect: {
+    top: number
+    left: number
+    right: number
+    bottom: number
+    x: number
+    y: number
+  }
+}
+
+const ELEMENT_NODE = 1
+
+const resolveTarget = (range: Range) => {
+  const container = range.commonAncestorContainer
+  const el =
+    container.nodeType === ELEMENT_NODE
+      ? (container as HTMLElement)
+      : container.parentElement
+
+  if (!el) return null
+
+  const flowNode = el.closest<HTMLElement>(".react-flow__node")
+  const nodeId = flowNode?.dataset.id
+  if (!nodeId) return null
+
+  const messageEl = el.closest<HTMLElement>("[data-item-id]")
+  console.log(messageEl?.dataset)
+  return {
+    nodeId,
+    messageId: messageEl?.dataset.itemId ?? null,
+    messageRole: messageEl?.dataset.itemRole ?? null,
+  }
+}
+
+export function useSelection() {
+  const [selected, setSelected] = useState<SelectionInfo | null>(null)
 
   useEffect(() => {
-    const handleKeyDown = (ev: KeyboardEvent) => {
-      if (ev.key === "s") {
-        ev.preventDefault()
-        setSelect(true)
+    const read = () => {
+      const sel = document.getSelection()
+
+      if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
+        setSelected(null)
+        return
       }
+
+      const text = sel.toString().trim()
+      if (!text) {
+        setSelected(null)
+        return
+      }
+      const cleanedText = text.replace(/\n+/g, " ")
+
+      const range = sel.getRangeAt(0)
+      console.log("range", range)
+      const target = resolveTarget(range)
+      if (!target || target.messageRole !== "assistant") {
+        setSelected(null)
+        return
+      }
+
+      const { top, left, right, bottom, x, y } = range.getBoundingClientRect()
+      setSelected({
+        text: cleanedText,
+        rect: { top, left, right, bottom, x, y },
+        ...target,
+      })
     }
 
-    const handleKeyUp = (ev: KeyboardEvent) => {
-      if (ev.key === "s") {
-        ev.preventDefault()
-        setSelect(false)
-      }
+    const onPointerUp = () => requestAnimationFrame(read)
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.shiftKey || e.key.startsWith("Arrow") || e.key === "a") read()
+    }
+    const onSelectionChange = () => {
+      const sel = document.getSelection()
+      if (!sel || sel.rangeCount === 0 || sel.isCollapsed) setSelected(null)
     }
 
-    window.addEventListener("keydown", handleKeyDown)
-    window.addEventListener("keyup", handleKeyUp)
+    document.addEventListener("pointerup", onPointerUp)
+    document.addEventListener("keyup", onKeyUp)
+    document.addEventListener("selectionchange", onSelectionChange)
+
+    return () => {
+      document.removeEventListener("pointerup", onPointerUp)
+      document.removeEventListener("keyup", onKeyUp)
+      document.removeEventListener("selectionchange", onSelectionChange)
+    }
   }, [])
 
-  return select
+  const clear = useCallback(() => {
+    document.getSelection()?.removeAllRanges()
+    setSelected(null)
+  }, [])
+
+  return { selected, clear }
 }

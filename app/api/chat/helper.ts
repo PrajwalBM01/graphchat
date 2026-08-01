@@ -17,6 +17,26 @@ export async function loadMessages(nodeId: string): Promise<UIMessage[]> {
   })
 }
 
+const getCutoffs = (dbedges: Edge[]) => {
+  const cutoffs = new Map<
+    string,
+    { messageId: string | null; highlight: string | null } | null
+  >()
+
+  for (const edge of dbedges) {
+    if (edge.branchPointMessageId) {
+      cutoffs.set(edge.sourceNodeId, {
+        messageId: edge.branchPointMessageId,
+        highlight: edge.branchMessage,
+      })
+    } else {
+      cutoffs.set(edge.sourceNodeId, null)
+    }
+  }
+
+  return cutoffs
+}
+
 const getAncestors = (nodeId: string, dbEdges: Edge[]): string[] => {
   const parentsMap = new Map<string, string[]>()
 
@@ -24,7 +44,6 @@ const getAncestors = (nodeId: string, dbEdges: Edge[]): string[] => {
     if (!parentsMap.has(edge.targetNodeId)) {
       parentsMap.set(edge.targetNodeId, [])
     }
-
     parentsMap.get(edge.targetNodeId)?.push(edge.sourceNodeId)
   }
 
@@ -38,25 +57,31 @@ const getAncestors = (nodeId: string, dbEdges: Edge[]): string[] => {
       if (visted.has(parent)) continue
 
       visted.add(parent)
-      ancestors.push(parent)
 
       dfs(parent)
+      ancestors.push(parent)
     }
   }
   dfs(nodeId)
   return ancestors
 }
 
-export async function getContext(nodeId: string) {
+export async function getContext(nodeId: string, dbMessages: UIMessage[]) {
   const nodeDetails = await prisma.node.findUnique({
     where: { id: nodeId },
+    include: { incoming: true },
   })
+
+  if (dbMessages.length <= 1 && nodeDetails?.incoming.length === 0) {
+    return "You are a helpful assistant."
+  }
 
   const dbEdges = await prisma.edge.findMany({
     where: { canvasId: nodeDetails?.canvasId },
   })
 
   const ancestors = getAncestors(nodeId, dbEdges)
+  const cutoffs = getCutoffs(dbEdges)
 
   const connectedNodes = await prisma.node.findMany({
     where: {
@@ -68,14 +93,74 @@ export async function getContext(nodeId: string) {
       id: true,
       type: true,
       data: true,
+      messages: { orderBy: { createdAt: "asc" } },
     },
   })
 
-  for (const node of connectedNodes) {
+  const arrangeAncestors = new Map(connectedNodes.map((n) => [n.id, n]))
+
+  let sources = ``
+
+  for (const id of ancestors) {
+    console.log("reaching here")
+    console.log("id", id)
+    console.log(arrangeAncestors)
+    const node = arrangeAncestors.get(id)
+    console.log("node", node)
+    if (!node) continue
+
+    //text node
     if (node.type === "text") {
+      console.log("text node reaching")
       const data = TextNodeDataSchema.parse(node.data)
-      return `<source type=${node.type}>${data.content}</source> The user is in a canvas where nodes have thier own context, the above provided source is a text node with some content, use it as referance.`
+      sources += ` <source type=${node.type}>${data.content}</source>`
+    }
+
+    //chat node
+    if (node.type === "chat") {
+      console.log("chat node reahcing")
+      let chatContent = ``
+      const cutoff = cutoffs.get(node.id) ?? null
+      const msgs = cutoff
+        ? node.messages.slice(
+            0,
+            node.messages.findIndex((msg) => msg.id === cutoff.messageId) + 1
+          )
+        : node.messages
+
+      for (const msg of msgs) {
+        const content =
+          msg.role === "assistant"
+            ? msg.content
+                .replace(/['"]\s*\+\s*[\n\r]*\s*['"]/g, "")
+                .replace(/^'|'$/g, "")
+                .replace(/###\s*/g, "")
+                .replace(/\*\*/g, "")
+                .replace(/\*\s+/g, "")
+                .replace(/[\n\r]+/g, " ")
+                .replace(/\s+/g, " ")
+                .trim()
+            : msg.content
+        chatContent += `<block role=${msg.role}>${content}</block>`
+        if (cutoff) {
+          chatContent += `<highlight>${cutoff.highlight}</highlight>`
+        }
+      }
+      sources += `<source type=${node.type} snapshot=${cutoff ? true : false}>${chatContent}</source>`
     }
   }
-  return `You are a helpfull assistant.`
+  console.log("sourrces", sources)
+
+  return `The user works in a non-linear canvas where conversations and documents exist as connected nodes. The sources below are upstream of the current conversation and were connected by the user as relevant background. They are ordered from earliest to most immediate — later sources generally build on earlier ones.
+  How to use them:
+  - Treat sources as reference material, not as your own prior turns. Some were produced by other AI models or written by the user.
+  - Never claim to have said something that appears in a source. If you need to refer to one, describe it by its title.
+  - Sources marked snapshot="true" are point-in-time excerpts; the original conversation may have continued past what you see and highlight is what the user branched for.
+  - The user chose to connect these, so assume relevance. If a question seems to reference something you cannot find, use your brain dont just think the referances are your ultimate resources.
+  - Do not summarize the sources back to the user unless asked. Answer the question if asked for referance, just summerize what are all the knowdlge you have.
+  <sources>
+  ${sources}
+  </sources>
+  The conversation that follows is the current node's own thread — that is the live exchange you are participating in.
+  `
 }

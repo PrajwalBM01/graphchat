@@ -39,7 +39,7 @@ const chatnode = (props: NodeProps<chatNode>) => {
     selectedText: string
   } | null>(null)
   const [input, setinput] = useState("")
-  const { openSidebar } = useChatSidebar()
+  // const { openSidebar } = useChatSidebar()
   const { messages, sendMessage, status } = useChat({
     id: props.id,
     messages: toUiMessage(props.data.messages),
@@ -54,31 +54,6 @@ const chatnode = (props: NodeProps<chatNode>) => {
       },
     }),
   })
-
-  const handleGlobalSelection = () => {
-    const selectionText = window.getSelection()
-    const text = selectionText?.toString().trim()
-    if (!text) {
-      setisSelected(false)
-      setselectedData(null)
-      return
-    }
-    console.log("selection", selectionText, selectionText?.toString())
-
-    const matchedElemnet =
-      selectionText?.anchorNode?.parentElement?.closest("[data-item-id]")
-
-    if (matchedElemnet) {
-      const messageId = matchedElemnet.getAttribute("data-item-id")
-      if (messageId && text) {
-        setisSelected(true)
-        setselectedData({
-          messageId: messageId,
-          selectedText: text,
-        })
-      }
-    }
-  }
 
   return (
     <div
@@ -101,7 +76,7 @@ const chatnode = (props: NodeProps<chatNode>) => {
           <div
             title="Sidebar"
             className="nodrag"
-            onClick={() => openSidebar(props.id)}
+            // onClick={() => openSidebar(props.id)}
           >
             <PanelRight
               className="cursor-pointer"
@@ -117,7 +92,7 @@ const chatnode = (props: NodeProps<chatNode>) => {
       </div>
       <div className="flex flex-col gap-2 p-2">
         <div
-          onMouseUp={handleGlobalSelection}
+          // onMouseUp={handleGlobalSelection}
           className={cn(
             "stretch nodrag mx-auto flex h-auto min-h-50 w-full flex-col gap-2 p-1 select-text"
           )}
@@ -126,6 +101,7 @@ const chatnode = (props: NodeProps<chatNode>) => {
             <div
               data-item-id={message.id}
               data-item-index={index}
+              data-item-role={message.role}
               key={message.id}
               className={cn(
                 "flex",
@@ -145,12 +121,12 @@ const chatnode = (props: NodeProps<chatNode>) => {
                             : "text-start"
                         )}
                       >
-                        {isSelected &&
+                        {/* {isSelected &&
                           message.id === selectedData?.messageId && (
                             <span className="absolute top-0 -right-30 flex gap-1 rounded-xl bg-primary p-2 text-lg text-black">
                               <Split size={30} className="rotate-90" /> Branch
                             </span>
-                          )}
+                          )} */}
                         <ReactMarkDown>{part.text}</ReactMarkDown>
                       </div>
                     )

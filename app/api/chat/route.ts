@@ -21,27 +21,31 @@ export async function POST(req: NextRequest) {
 
   await updateMessages(nodeId, message)
 
-  const messages = await loadMessages(nodeId)
-  messages.push({ id: message.id, role: message.role, parts: message.parts })
+  const dbMessages = await loadMessages(nodeId)
+  // dbMessages.push({ id: message.id, role: message.role, parts: message.parts })
 
   //context
-  const system = await getContext(nodeId)
+  const system = await getContext(nodeId,dbMessages)
 
   console.log("system prompt", system)
+
+  const aiId = createId()
 
   const result = streamText({
     model: openrouter.chat("google/gemma-4-26b-a4b-it:free"),
     instructions: system,
-    messages: await convertToModelMessages(messages),
+    messages: await convertToModelMessages(dbMessages),
   })
 
   return createUIMessageStreamResponse({
     stream: toUIMessageStream({
       stream: result.stream,
+      originalMessages: dbMessages,
+      generateMessageId: () => aiId,
       onEnd: async (endData) => {
         await updateMessages(nodeId, {
           ...endData.responseMessage,
-          id: createId(),
+          id: aiId,
         })
       },
     }),
