@@ -1,5 +1,7 @@
 "use client"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useCanvasStore } from "@/store/canvasStore"
 import Link from "next/link"
 import { useParams, usePathname, useRouter } from "next/navigation"
 
@@ -9,6 +11,7 @@ interface historyType {
 
 const History = ({ canvases }: historyType) => {
   const { id } = useParams()
+  const { setIsMouse } = useCanvasStore()
 
   return (
     <div className="flex flex-col gap-2">
@@ -25,6 +28,11 @@ const History = ({ canvases }: historyType) => {
           {canvas.title ?? "Untitled"}
         </Link>
       ))}
+
+      <div className="flex justify-between">
+        <Button onClick={() => setIsMouse(true)}>mouse</Button>
+        <Button onClick={() => setIsMouse(false)}>touchpad</Button>
+      </div>
     </div>
   )
 }

@@ -166,9 +166,9 @@ const chatnode = (props: NodeProps<chatNode>) => {
                 </SelectTrigger>
                 <SelectContent className="border-none bg-transparent">
                   <SelectGroup>
-                    <SelectItem value="light">Light</SelectItem>
-                    <SelectItem value="dark">Dark</SelectItem>
-                    <SelectItem value="system">System</SelectItem>
+                    <SelectItem value="light">Gemini</SelectItem>
+                    <SelectItem value="dark">claude</SelectItem>
+                    <SelectItem value="system">chatgpt</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>

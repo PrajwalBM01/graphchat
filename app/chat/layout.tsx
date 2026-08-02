@@ -1,4 +1,3 @@
-import { AppSidebar } from "@/components/app-provider"
 import {
   SidebarProvider,
   SidebarTrigger,
@@ -11,8 +10,7 @@ const layout = async ({
   children,
 }: Readonly<{ children: React.ReactNode }>) => {
   return (
-    <SidebarProvider className="">
-      <AppSidebar />
+    <SidebarProvider defaultOpen={false}>
       <main className="h-full w-full">{children}</main>
     </SidebarProvider>
   )

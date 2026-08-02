@@ -156,3 +156,17 @@
   width: 15;
   top: 48;
 }
+
+.react-flow__controls {
+  background: var(--accent);
+  border-radius: 6px;
+  padding: 4;
+  gap: 4;
+}
+
+.react-flow__controls-button {
+  background: var(--card);
+  border-radius: 6px;
+  border: none;
+  overflow: hidden;
+}

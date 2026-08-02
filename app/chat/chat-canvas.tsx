@@ -15,8 +15,6 @@ import {
   useNodesState,
   useReactFlow,
   ViewportPortal,
-  XYPosition,
-  type IsValidConnection,
 } from "@xyflow/react"
 import { useTheme } from "next-themes"
 import { appNodes, nodeTypes } from "../../components/reactflow/nodes"
@@ -26,19 +24,24 @@ import {
   updateNodePos,
 } from "../../actions/nodeActions"
 import PaneContext from "@/components/reactflow/PaneContext"
-import { useCallback, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createId } from "@paralleldrive/cuid2"
 import { createNodeData } from "@/lib/node-data"
 import { useParams } from "next/navigation"
 import { insertEdge } from "@/actions/edgeActions"
 import { cycleCheck } from "@/lib/canvasHelper"
 import { toast } from "sonner"
-import { Sheet } from "@/components/ui/sheet"
-import { ChatSidebarContext } from "@/components/reactflow/SidebarContext"
-import ChatSidebar from "@/components/chat-sidebar"
-import { toUiMessage } from "@/components/reactflow/nodes/chatnode"
 import { SelectionInfo, useSelection } from "@/hooks/use-select"
-import { Split } from "lucide-react"
+import { MousePointerClick, Settings, Split } from "lucide-react"
+import { useCanvasStore } from "@/store/canvasStore"
+import {
+  SidebarInset,
+  SidebarProvider,
+  useSidebar,
+} from "@/components/ui/sidebar"
+import RightSidebar from "@/components/RightSidebar"
+import { LeftTrigger, RightTrigger } from "@/components/sidebarTriggers"
+import LeftSidebar from "@/components/LeftSidebar"
 
 const handleNodeDrag: OnNodeDrag = (event, node) => {
   updateNodePos({
@@ -59,9 +62,14 @@ const page = ({
   const [nodes, setNodes, onNodesChange] = useNodesState(rfnodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(rfedges)
   const { resolvedTheme } = useTheme()
-  const { screenToFlowPosition, getEdges, getZoom } = useReactFlow()
+  const { screenToFlowPosition, getEdges, getZoom, getNodes } = useReactFlow()
   const { selected, clear } = useSelection()
-  // const branchPostion = useRef<XYPosition | null>(null)
+  const { setFreshStart, freshStart, isMouse } = useCanvasStore()
+
+  useEffect(() => {
+    const currentNodes = getNodes()
+    currentNodes.length === 0 ? setFreshStart(true) : setFreshStart(false)
+  }, [nodes])
 
   const anchor = useMemo(
     () =>
@@ -242,12 +250,33 @@ const page = ({
       }}
       onConnect={handleEdgeConnection}
       colorMode={resolvedTheme === "dark" ? "dark" : "light"}
-      // isValidConnection={validateConnection}
+      maxZoom={5.0}
+      minZoom={0.1}
+      panOnScroll={!isMouse}
+      panOnDrag={isMouse}
     >
+      <Background />
+      {/* roots left panel */}
+      <LeftTrigger />
+      <LeftSidebar />
+
+      {/* settings right panel */}
+      
+        <SidebarProvider defaultOpen={false}>
+          <RightTrigger />
+          <RightSidebar />
+        </SidebarProvider>
+      
+
       <PaneContext />
       <MiniMap pannable zoomable />
-      <Background />
-      <Controls />
+      <Controls showInteractive={false} />
+      {freshStart && (
+        <div className="pointer-events-none absolute z-5 flex h-full w-full items-center justify-center gap-2 text-foreground/40">
+          <MousePointerClick strokeWidth={1.5} />
+          <h1>Right click to add a new node</h1>
+        </div>
+      )}
       {selected && anchor && (
         <ViewportPortal>
           <div
@@ -258,7 +287,6 @@ const page = ({
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
                 handleBranching(selected)
-                console.log(selected.nodeId, selected.messageId, selected.text)
               }}
               className="flex items-center gap-2 rounded-xl bg-primary p-2 text-black shadow"
             >
