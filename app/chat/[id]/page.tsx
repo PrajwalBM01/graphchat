@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import ChatCanvas from "./canvas-view"
 import {
   appNodes,
@@ -9,6 +9,8 @@ import {
 } from "@/components/reactflow/nodes"
 import type { Message, Node } from "@/app/generated/prisma/client"
 import { Edge } from "@xyflow/react"
+import { auth } from "@/lib/auth"
+import { headers } from "next/headers"
 
 export type NodeCombined = { messages: Message[] } & Node
 
@@ -74,16 +76,19 @@ const toAppNode = (n: NodeCombined): appNodes | null => {
 
 const page = async ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params
+  const session = await auth.api.getSession({ headers: await headers() })
+
+  if (!session) redirect("/signin")
 
   const canvasData = await prisma.canvas.findUnique({
-    where: { id },
+    where: { id, userId: session.user.id },
     include: {
       nodes: { include: { messages: { orderBy: { createdAt: "asc" } } } },
       edges: true,
     },
   })
-  console.log(canvasData)
-  if (!canvasData) notFound()
+
+  if (!canvasData) redirect("/chat")
 
   const canvasNodes = canvasData.nodes
     .map(toAppNode)

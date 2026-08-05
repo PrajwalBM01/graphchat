@@ -42,6 +42,9 @@ import {
 import RightSidebar from "@/components/RightSidebar"
 import { LeftTrigger, RightTrigger } from "@/components/sidebarTriggers"
 import LeftSidebar from "@/components/LeftSidebar"
+import { Sheet } from "@/components/ui/sheet"
+import ChatSidebar from "@/components/chat-sidebar"
+import { disposeNodeChat } from "@/lib/chat-registry"
 
 const handleNodeDrag: OnNodeDrag = (event, node) => {
   updateNodePos({
@@ -64,7 +67,8 @@ const page = ({
   const { resolvedTheme } = useTheme()
   const { screenToFlowPosition, getEdges, getZoom, getNodes } = useReactFlow()
   const { selected, clear } = useSelection()
-  const { setFreshStart, freshStart, isMouse } = useCanvasStore()
+  const { setFreshStart, freshStart, isMouse, sideViewNodeId, closeSideView } =
+    useCanvasStore()
 
   useEffect(() => {
     const currentNodes = getNodes()
@@ -245,6 +249,8 @@ const page = ({
       onNodeDragStop={handleNodeDrag}
       onNodesDelete={(nodes) => {
         nodes.map((n) => {
+          if (n.id === sideViewNodeId) closeSideView()
+          disposeNodeChat(n.id)
           deleteNode({ nodeId: n.id })
         })
       }}
@@ -257,16 +263,16 @@ const page = ({
     >
       <Background />
       {/* roots left panel */}
-      <LeftTrigger />
-      <LeftSidebar />
+      {/* this is for history and profile section, hidden for now */}
+      {/* <LeftTrigger />
+      <LeftSidebar /> */}
 
       {/* settings right panel */}
-      
-        <SidebarProvider defaultOpen={false}>
-          <RightTrigger />
-          <RightSidebar />
-        </SidebarProvider>
-      
+
+      <SidebarProvider defaultOpen={false}>
+        <RightTrigger />
+        <RightSidebar />
+      </SidebarProvider>
 
       <PaneContext />
       <MiniMap pannable zoomable />
@@ -277,6 +283,19 @@ const page = ({
           <h1>Right click to add a new node</h1>
         </div>
       )}
+
+      {/* single sheet for the whole canvas - the open node id is the only state */}
+      <Sheet
+        open={sideViewNodeId !== null}
+        onOpenChange={(open) => {
+          if (!open) closeSideView()
+        }}
+      >
+        {sideViewNodeId && (
+          <ChatSidebar key={sideViewNodeId} nodeId={sideViewNodeId} />
+        )}
+      </Sheet>
+
       {selected && anchor && (
         <ViewportPortal>
           <div

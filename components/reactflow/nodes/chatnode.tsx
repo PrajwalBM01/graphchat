@@ -1,12 +1,10 @@
 "use client"
 import { cn } from "@/lib/utils"
-import { UIMessage, useChat } from "@ai-sdk/react"
-import { Handle, Node, NodeProps, Position } from "@xyflow/react"
-import React, { MouseEventHandler, useState } from "react"
-import type { Message as DbMessage } from "@/app/generated/prisma/client"
+import { useChat } from "@ai-sdk/react"
+import { Handle, Node, NodeProps, Position, useReactFlow } from "@xyflow/react"
+import React, { MouseEventHandler, useMemo, useState } from "react"
 import type { chatNode } from "./index"
 import ReactMarkDown from "react-markdown"
-import { DefaultChatTransport } from "ai"
 import {
   ArrowUp,
   BotMessageSquare,
@@ -14,7 +12,7 @@ import {
   Split,
   Trash,
 } from "lucide-react"
-import { useChatSidebar } from "@/components/reactflow/SidebarContext"
+import { disposeNodeChat, getNodeChat } from "@/lib/chat-registry"
 import {
   Select,
   SelectContent,
@@ -23,37 +21,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-
-//helpers
-export const toUiMessage = (messages: DbMessage[]): UIMessage[] =>
-  messages?.map((m) => ({
-    id: m.id,
-    role: m.role,
-    parts: [{ type: "text", text: m.content }],
-  }))
+import remarkGfm from "remark-gfm"
+import { deleteNode } from "@/actions/nodeActions"
+import { useCanvasStore } from "@/store/canvasStore"
 
 const chatnode = (props: NodeProps<chatNode>) => {
   const [isSelected, setisSelected] = useState(false)
+  const { openSideView, sideViewNodeId, closeSideView } = useCanvasStore()
+  const { deleteElements } = useReactFlow()
   const [selectedData, setselectedData] = useState<{
     messageId: string
     selectedText: string
   } | null>(null)
   const [input, setinput] = useState("")
-  // const { openSidebar } = useChatSidebar()
-  const { messages, sendMessage, status } = useChat({
-    id: props.id,
-    messages: toUiMessage(props.data.messages),
-    transport: new DefaultChatTransport({
-      prepareSendMessagesRequest: ({ id, messages }) => {
-        return {
-          body: {
-            nodeId: props.id,
-            message: messages[messages.length - 1],
-          },
-        }
-      },
-    }),
-  })
+  const chat = useMemo(
+    () => getNodeChat(props.id, props.data.messages),
+    [props.id]
+  )
+  const { messages, sendMessage, status } = useChat({ chat })
 
   return (
     <div
@@ -76,23 +61,38 @@ const chatnode = (props: NodeProps<chatNode>) => {
           <div
             title="Sidebar"
             className="nodrag"
-            // onClick={() => openSidebar(props.id)}
+            onClick={() =>
+              sideViewNodeId === props.id
+                ? closeSideView()
+                : openSideView(props.id)
+            }
           >
             <PanelRight
-              className="cursor-pointer"
+              className={cn(
+                "cursor-pointer",
+                sideViewNodeId === props.id && "text-primary"
+              )}
               strokeWidth={1.5}
               size={20}
             />
           </div>
           <div title="Delete">
-            <Trash className="cursor-pointer" strokeWidth={1.5} size={20} />
+            <Trash
+              onClick={async () => {
+                if (sideViewNodeId === props.id) closeSideView()
+                disposeNodeChat(props.id)
+                await deleteElements({ nodes: [{ id: props.id }], edges: [] })
+              }}
+              className="cursor-pointer"
+              strokeWidth={1.5}
+              size={20}
+            />
           </div>
         </div>
         <Handle type="source" position={Position.Right} id="source-b" />
       </div>
       <div className="flex flex-col gap-2 p-2">
         <div
-          // onMouseUp={handleGlobalSelection}
           className={cn(
             "stretch nodrag mx-auto flex h-auto min-h-50 w-full flex-col gap-2 p-1 select-text"
           )}
@@ -121,13 +121,9 @@ const chatnode = (props: NodeProps<chatNode>) => {
                             : "text-start"
                         )}
                       >
-                        {/* {isSelected &&
-                          message.id === selectedData?.messageId && (
-                            <span className="absolute top-0 -right-30 flex gap-1 rounded-xl bg-primary p-2 text-lg text-black">
-                              <Split size={30} className="rotate-90" /> Branch
-                            </span>
-                          )} */}
-                        <ReactMarkDown>{part.text}</ReactMarkDown>
+                        <ReactMarkDown remarkPlugins={[remarkGfm]}>
+                          {part.text}
+                        </ReactMarkDown>
                       </div>
                     )
                 }

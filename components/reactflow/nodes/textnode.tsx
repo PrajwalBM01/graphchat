@@ -1,14 +1,16 @@
 "use client"
-import React, { ChangeEvent, useRef, useState } from "react"
-import { Handle, NodeProps, Position } from "@xyflow/react"
+import React, { ChangeEvent, useCallback, useRef, useState } from "react"
+import { Handle, NodeProps, Position, useReactFlow } from "@xyflow/react"
 import { Input } from "@/components/ui/input"
 import { textNode } from "./index"
-import { updateTextNode } from "@/actions/nodeActions"
+import { deleteNode, updateTextNode } from "@/actions/nodeActions"
 import { PanelRight, Text, Trash, Type } from "lucide-react"
 
 const textnode = (props: NodeProps<textNode>) => {
   const [content, setcontent] = useState(props.data.content)
+  const [title, settitle] = useState(props.data.title)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const { deleteElements } = useReactFlow()
 
   const onInputChange = (
     event: ChangeEvent<HTMLTextAreaElement, HTMLTextAreaElement>
@@ -25,17 +27,33 @@ const textnode = (props: NodeProps<textNode>) => {
       })
     }, 1000)
   }
+
   return (
     <div className="group h-auto min-h-50 w-[450px] rounded-xl bg-accent shadow-[0px_0px_5px_3px_rgba(0,0,0,0.1)]">
       <div className="custom_drag_handle relative flex cursor-grab items-center justify-between rounded-t-xl bg-accent p-2 transition-colors duration-300 group-hover:bg-black/10 group-hover:dark:bg-background/40">
         {/* <div className="rounded-lg border p-1">{props.data.title}</div> */}
-        <div className="flex items-center justify-center gap-2 rounded-lg p-1 shadow-[0px_0px_2px_1px_rgba(0,0,0,0.1)] dark:border">
+        <div className="flex items-center justify-center gap-2 rounded-lg px-1 shadow-[0px_0px_2px_1px_rgba(0,0,0,0.1)] dark:border">
           <Type strokeWidth={1.5} />
-          <h1 className="text-xl font-medium">{props.data.title}</h1>
+          <input
+            type="text"
+            className="field-sizing-content max-w-50 truncate rounded-sm text-xl font-medium outline-0 focus:outline-0"
+            value={title.length === 0 ? "Untitled" : title}
+            onChange={(e) => {
+              settitle(e.target.value)
+            }}
+          />
+          {/* <h1 className="text-xl font-medium">{props.data.title}</h1> */}
         </div>
         <div className="flex items-center justify-center gap-2 px-1 opacity-0 transition-all duration-300 group-hover:opacity-100">
           <div title="Delete">
-            <Trash className="cursor-pointer" strokeWidth={1.5} size={20} />
+            <Trash
+              onClick={async () => {
+                await deleteElements({ nodes: [{ id: props.id }], edges: [] })
+              }}
+              className="cursor-pointer"
+              strokeWidth={1.5}
+              size={20}
+            />
           </div>
         </div>
         <Handle type="source" position={Position.Right} id="source-b" />

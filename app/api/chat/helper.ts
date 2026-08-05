@@ -6,6 +6,7 @@ import { UIMessage } from "ai"
 export async function loadMessages(nodeId: string): Promise<UIMessage[]> {
   const messages = await prisma.message.findMany({
     where: { nodeId: nodeId },
+    orderBy: { createdAt: "asc" },
   })
 
   return messages.map((message) => {

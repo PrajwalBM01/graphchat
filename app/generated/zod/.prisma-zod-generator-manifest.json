@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "generatorVersion": "0.0.1",
-  "generatedAt": "2026-07-31T13:49:52.438Z",
+  "generatedAt": "2026-08-04T18:29:37.732Z",
   "outputPath": "D:\\CodeX\\My projects\\personal\\graphchat\\app\\generated\\zod",
   "files": [
     "schemas\\enums\\TransactionIsolationLevel.schema.ts",
@@ -9,6 +9,10 @@
     "schemas\\enums\\NodeScalarFieldEnum.schema.ts",
     "schemas\\enums\\EdgeScalarFieldEnum.schema.ts",
     "schemas\\enums\\MessageScalarFieldEnum.schema.ts",
+    "schemas\\enums\\UserScalarFieldEnum.schema.ts",
+    "schemas\\enums\\SessionScalarFieldEnum.schema.ts",
+    "schemas\\enums\\AccountScalarFieldEnum.schema.ts",
+    "schemas\\enums\\VerificationScalarFieldEnum.schema.ts",
     "schemas\\enums\\SortOrder.schema.ts",
     "schemas\\enums\\NullableJsonNullValueInput.schema.ts",
     "schemas\\enums\\QueryMode.schema.ts",

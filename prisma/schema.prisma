@@ -10,12 +10,13 @@ generator client {
 
 generator zod {
   provider = "prisma-zod-generator"
-  output="../app/generated/zod"
-  config = "./zod-generator.config.json"
+  output   = "../app/generated/zod"
+  config   = "./zod-generator.config.json"
 }
 
 datasource db {
   provider = "postgresql"
+  
 }
 
 enum NodeType {
@@ -31,45 +32,113 @@ enum Role {
 }
 
 model Canvas {
-  id String @id @default(cuid())
-  title String?
-  nodes Node[]
-  edges Edge[]
+  id        String   @id @default(cuid())
+  title     String?
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nodes     Node[]
+  edges     Edge[]
   createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Node {
-  id String @id @default(cuid())
-  canvasId String
-  canvas Canvas @relation(fields: [canvasId], references: [id])
-  type NodeType
+  id        String    @id @default(cuid())
+  canvasId  String
+  canvas    Canvas    @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+  type      NodeType
   positionX Float
   positionY Float
-  title String?
-  data Json?
-  isolated Boolean @default(false)
-  messages Message[]
-  incoming Edge[] @relation("targetNode")
-  outgoing Edge[] @relation("sourceNode")
+  title     String?
+  data      Json?
+  isolated  Boolean   @default(false)
+  messages  Message[]
+  incoming  Edge[]    @relation("targetNode")
+  outgoing  Edge[]    @relation("sourceNode")
 }
 
 model Edge {
-  id String @id @default(cuid())
-  canvasId String
-  canvas Canvas @relation(fields: [canvasId],references: [id])
-  sourceNodeId String
-  targetNodeId String
-  sourceNode Node @relation("sourceNode", fields: [sourceNodeId],references: [id])
-  targetNode Node @relation("targetNode", fields: [targetNodeId], references: [id])
+  id                   String  @id @default(cuid())
+  canvasId             String
+  canvas               Canvas  @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+  sourceNodeId         String
+  targetNodeId         String
+  sourceNode           Node    @relation("sourceNode", fields: [sourceNodeId], references: [id], onDelete: Cascade)
+  targetNode           Node    @relation("targetNode", fields: [targetNodeId], references: [id], onDelete: Cascade)
   branchPointMessageId String?
-  branchMessage String?
+  branchMessage        String?
 }
 
 model Message {
-  id String @id @default(cuid())
-  nodeId String
-  node Node @relation(fields: [nodeId],references: [id])
-  role Role
-  content String
+  id        String   @id @default(cuid())
+  nodeId    String
+  node      Node     @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  role      Role
+  content   String
   createdAt DateTime @default(now())
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  canvases      Canvas[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }

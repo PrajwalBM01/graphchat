@@ -22,6 +22,9 @@ import {
   Text,
   Type,
 } from "lucide-react"
+import { auth } from "@/lib/auth"
+import { authClient } from "@/lib/auth-client"
+import { useRouter } from "next/navigation"
 
 const themeIcons = {
   light: <Sun />,
@@ -32,6 +35,7 @@ const themeIcons = {
 const RightSidebar = () => {
   const { isMouse, setIsMouse } = useCanvasStore()
   const { theme, setTheme, themes } = useTheme()
+  const router = useRouter()
   return (
     <Sidebar side="right" variant="floating">
       <SidebarHeader>
@@ -79,7 +83,19 @@ const RightSidebar = () => {
           </div>
         </div>
       </SidebarContent>
-      <SidebarFooter />
+      <SidebarFooter>
+        <Button
+          onClick={async () =>
+            await authClient.signOut({
+              fetchOptions: {
+                onSuccess: () => router.push("/signin"),
+              },
+            })
+          }
+        >
+          Sign Out
+        </Button>
+      </SidebarFooter>
     </Sidebar>
   )
 }

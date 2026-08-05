@@ -133,6 +133,19 @@
   }
 }
 
+.dots {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: radial-gradient(
+    circle,
+    var(--foreground) 0.4px,
+    transparent 0.6px
+  );
+  background-size: 30px 30px;
+  background-position: 0 0;
+}
+
 .custom-edge .react-flow__edge-path {
   stroke: var(--primary);
   stroke-width: 3px;

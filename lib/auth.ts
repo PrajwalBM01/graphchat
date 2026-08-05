@@ -1,0 +1,51 @@
+import { betterAuth } from "better-auth"
+import { nextCookies } from "better-auth/next-js"
+import { prismaAdapter } from "better-auth/adapters/prisma"
+import prisma from "./prisma"
+
+export const auth = betterAuth({
+  baseURL: process.env.BETTER_AUTH_URL,
+  secret: process.env.BETTER_AUTH_SECRET,
+
+  database: prismaAdapter(prisma, { provider: "postgresql" }),
+
+  emailAndPassword: {
+    enabled: true,
+  },
+
+  socialProviders: {
+    google: {
+      prompt: "select_account",
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+    },
+  },
+
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google"],
+      allowDifferentEmails: false,
+    },
+  },
+
+  session: {
+    expiresIn: 60 * 60 * 24 * 7,
+    updateAge: 60 * 60 * 24,
+    cookieCache: { enabled: true, maxAge: 5 * 60 },
+  },
+
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          await prisma.canvas.create({
+            data: { userId: user.id, title: "untitled canvas" },
+          })
+        },
+      },
+    },
+  },
+
+  plugins: [nextCookies()],
+})

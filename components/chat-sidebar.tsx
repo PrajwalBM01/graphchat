@@ -1,33 +1,35 @@
 "use client"
-import React from "react"
+import React, { useMemo } from "react"
 import {
-  Sheet,
-  SheetClose,
   SheetContent,
   SheetDescription,
-  SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet"
-import { Button } from "./ui/button"
-import { ChatNodeData } from "./reactflow/nodes"
+import { chatNode } from "./reactflow/nodes"
 import { cn } from "@/lib/utils"
-import { UIMessage } from "ai"
 import ReactMarkDown from "react-markdown"
 import { useReactFlow } from "@xyflow/react"
+import { useChat } from "@ai-sdk/react"
+import { getNodeChat } from "@/lib/chat-registry"
+import remarkGfm from "remark-gfm"
 
-const ChatSidebar = ({
-  messages,
-  title,
-}: {
-  messages: UIMessage[]
-  title: string
-}) => {
+const ChatSidebar = ({ nodeId }: { nodeId: string }) => {
+  const { getNode } = useReactFlow()
+  const node = getNode(nodeId) as chatNode | undefined
+
+  // same Chat instance the node uses -> live messages, incl. while streaming
+  const chat = useMemo(
+    () => getNodeChat(nodeId, node?.data.messages ?? []),
+    [nodeId]
+  )
+  const { messages } = useChat({ chat })
+  const title = node?.data.title ?? "Chat"
+
   return (
     <SheetContent className="overflow-y-scroll bg-accent data-[side=right]:sm:max-w-lg">
       <SheetHeader>
-        <SheetTitle className="hidden">{title}</SheetTitle>
+        <SheetTitle>{title}</SheetTitle>
         <SheetDescription className="hidden">
           Chat history in side view
         </SheetDescription>
@@ -46,7 +48,6 @@ const ChatSidebar = ({
               message.role === "user" ? "justify-end" : "justify-start"
             )}
           >
-            {/* {message.role === "user" ? "User:" : "AI:"} */}
             {message.parts.map((part, i) => {
               switch (part.type) {
                 case "text":
@@ -58,35 +59,16 @@ const ChatSidebar = ({
                         message.role === "user" ? "w-2/3 bg-card" : "text-start"
                       )}
                     >
-                      <ReactMarkDown>{part.text}</ReactMarkDown>
-                      {/* {part.text} */}
+                      <ReactMarkDown remarkPlugins={[remarkGfm]}>
+                        {part.text}
+                      </ReactMarkDown>
                     </div>
                   )
               }
             })}
           </div>
         ))}
-        {/* <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            sendMessage({ text: input })
-            setinput("")
-          }}
-        >
-          <input
-            className="w-full rounded-md border p-1 text-sm"
-            value={input}
-            placeholder="Say something..."
-            onChange={(e) => setinput(e.currentTarget.value)}
-          />
-        </form> */}
       </div>
-      {/* <SheetFooter>
-        <Button type="submit">Save changes</Button>
-        <SheetClose asChild>
-          <Button variant="outline">Close</Button>
-        </SheetClose>
-      </SheetFooter> */}
     </SheetContent>
   )
 }
